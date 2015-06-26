@@ -1,4 +1,6 @@
-﻿#myName = "Rogue-PB v0.1"
+﻿EnableExplicit
+
+#myName = "Rogue-PB v0.2"
 
 Structure objects
   x.w
@@ -37,10 +39,46 @@ Procedure AddObj(x,y,type)
   all()\type = type
 EndProcedure
 
-Procedure createMap()
-  x = 10*Random(30,0)
-  y = 10*Random(30,0)
-EndProcedure
+; Procedure.f noise(x.l,y.l) 
+;   n=x+y*57 
+;   n=(n<<13)!n 
+;   q = ((n*(n*n*15731+789221)+1376312589)&$7fffffff) 
+;   ProcedureReturn (1.0 - q / 1073741824.0) 
+; EndProcedure
+; 
+; Procedure createMap()
+;   noiseOffset = realRand(0,10000)
+;   For y = 0 To worldH
+;     For x = 0 To worldW
+;       curnoise = noise(noiseOffset + x, noiseOffset + y)
+;       ; If noise value is high enough
+;       If (curnoise > 0.5) 
+;         ; trying To create solid blocks of the same type
+;         If ((x - 1 >= 0) && (pWorld[x - 1][y] != none)) 
+;           pWorld[x][y] = pWorld[x - 1][y];
+;         ElseIf ((x + 1 < worldW) && (pWorld[x + 1][y] != none)) 
+;           pWorld[x][y] = pWorld[x + 1][y];
+;         ElseIf ((y - 1 >= 0) && (pWorld[x][y - 1] != none)) 
+;           pWorld[x][y] = pWorld[x][y - 1];
+;         ElseIf ((y + 1 < worldH) && (pWorld[x][y + 1] != none)) 
+;           pWorld[x][y] = pWorld[x][y + 1];
+;         ElseIf ((x + 1 < worldW) && (y + 1 < worldH) && (pWorld[x + 1][y + 1] != none)) 
+;           pWorld[x][y] = pWorld[x + 1][y + 1];
+;         ElseIf ((x - 1 >= 0) && (y + 1 < worldH) && (pWorld[x - 1][y + 1] != none)) 
+;           pWorld[x][y] = pWorld[x - 1][y + 1];
+;         ElseIf ((x + 1 < worldW) && (y - 1 >= 0) && (pWorld[x + 1][y - 1] != none)) 
+;           pWorld[x][y] = pWorld[x + 1][y - 1];
+;         ElseIf ((x - 1 >= 0) && (y - 1 >= 0) && (pWorld[x - 1][y - 1] != none)) 
+;           pWorld[x][y] = pWorld[x - 1][y - 1];
+;         Else 
+;           pWorld[x][y] = (char)realRand(1, 3);
+;         Else 
+;           pWorld[x][y] = none;
+;         EndIf
+;       EndIf
+;     Next
+;   Next
+; EndProcedure
 
 Procedure start()
   AddObj(0,0,#player)
@@ -53,6 +91,7 @@ Procedure start()
 EndProcedure  
 
 Procedure DrawAllObj()
+  Protected fin, i, x, y, type
   StartDrawing(CanvasOutput(#canva))
   Box(0,0,w,h,0)
   fin = ListSize(all())-1
@@ -103,7 +142,6 @@ Procedure Move(param)
   SelectElement(all(),2)
   param = Random(3)
   moveIt
-;   selectedObject = -1
   DrawAllObj()
 EndProcedure
 
@@ -118,22 +156,19 @@ AddKeyboardShortcut(#wnd,#PB_Shortcut_D,#right)
 start()
 DrawAllObj()
 
+
 Repeat
-  event = WaitWindowEvent()
-    If event = #PB_Event_Menu And #PB_EventType_Focus ; только если мышь на канве
+  Define event = WaitWindowEvent()
+    If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
       Select EventMenu()
         Case #up
           Move(#up)
-          Debug "W"
         Case #down
           Move(#down)
-          Debug "S"
         Case #left
           Move(#left)
-          Debug "A"
         Case #right
           Move(#right)
-          Debug "D"
     EndSelect
   EndIf
   Until event = #PB_Event_CloseWindow
