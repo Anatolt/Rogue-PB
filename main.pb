@@ -3,7 +3,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.2"
+#myName = "Rogue-PB v0.3"
 
 Structure objects
   x.w
@@ -11,7 +11,7 @@ Structure objects
   type.l ;   #player   #foe   #money   #stone   #tree   #water 
 EndStructure
 
-Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10
+Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW)
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -52,72 +52,45 @@ Procedure.f noise(x.l,y.l)
   ProcedureReturn (1.0 - q / 1073741824.0) 
 EndProcedure
 
-Global none = 0, Dim pWorld.l(worldH,worldW)
-
 Procedure createMap()
-  Protected noiseOffset = Random(10000), y, x, curnoise, type
+  Protected y, x, type, curnoise.f
   For y = 0 To worldH
     For x = 0 To worldW
-      curnoise = Modulo(noise(x, y))
-      Debug "x="+x+",y="+y+",curnoise="+curnoise
-      ; If noise value is high enough
-      If (curnoise > 0.5)
-        Debug "we are here curnoise > 0.5"
-        ; trying To create solid blocks of the same type
-        If ((x - 1 >= 0) And Not (pWorld(x - 1,y) = none)) 
-;           pWorld(x,y) = pWorld(x - 1,y);
-;         ElseIf ((x + 1 < worldW) And Not (pWorld(x + 1,y) = none)) 
-;           pWorld(x,y) = pWorld(x + 1,y);
-;         ElseIf ((y - 1 >= 0) And Not (pWorld(x,y - 1) = none)) 
-;           pWorld(x,y) = pWorld(x,y - 1);
-;         ElseIf ((y + 1 < worldH) And Not (pWorld(x,y + 1) = none)) 
-;           pWorld(x,y) = pWorld(x,y + 1);
-;         ElseIf ((x + 1 < worldW) And (y + 1 < worldH) And Not (pWorld(x + 1,y + 1) = none)) 
-;           pWorld(x,y) = pWorld(x + 1,y + 1);
-;         ElseIf ((x - 1 >= 0) And (y + 1 < worldH) And Not (pWorld(x - 1,y + 1) = none)) 
-;           pWorld(x,y) = pWorld(x - 1,y + 1);
-;         ElseIf ((x + 1 < worldW) And (y - 1 >= 0) And Not (pWorld(x + 1,y - 1) = none)) 
-;           pWorld(x,y) = pWorld(x + 1,y - 1);
-;         ElseIf ((x - 1 >= 0) And (y - 1 >= 0) And Not (pWorld(x - 1,y - 1) = none)) 
-;           pWorld(x,y) = pWorld(x - 1,y - 1);
-        Else 
-          
-
-        EndIf
-      Else 
-        Debug "we are here curnoise NOT > 0.5"
-        type = Random(3,1)
-          Select type
-            Case #player 
-              pWorld(x,y) = #player
-            Case #foe
-              pWorld(x,y) = #foe
-            Case #money
-              pWorld(x,y) = #money
-            Case 1
-              pWorld(x,y) = #stone
-            Case 2 
-              pWorld(x,y) = #tree
-            Case 3
-              pWorld(x,y) = #water
-            Default
-              pWorld(x,y) = #White
-          EndSelect
-        ;pWorld(x,y) = none;
+      curnoise = Modulo(noise(x,y))
+;       Debug "x="+x+",y="+y+",noise="+curnoise
+      If curnoise > 0.5
+        type = Random(3)
+        Select type
+          Case #player 
+            pWorld(x,y) = #player
+          Case #foe
+            pWorld(x,y) = #foe
+          Case #money
+            pWorld(x,y) = #money
+          Case 0
+            pWorld(x,y) = 0
+          Case 1
+            pWorld(x,y) = #stone
+          Case 2 
+            pWorld(x,y) = #tree
+          Case 3
+            pWorld(x,y) = #water
+          Default
+            Debug "Creation of map type ERROR"
+        EndSelect
+      Else
+        pWorld(x,y) = 0
       EndIf
     Next
   Next
 EndProcedure
 
-; Procedure start()
-;   AddObj(0,0,#player)
-;   AddObj(5*ww,10*hh,#foe)
-;   AddObj(10*ww,5*hh,#foe)
-;   AddObj(4*ww,4*hh,#money)
-;   AddObj(6*ww,6*hh,#stone)
-;   AddObj(8*ww,8*hh,#tree)
-;   AddObj(10*ww,10*hh,#water)
-; EndProcedure  
+Procedure start()
+  AddObj(0,0,#player)
+  AddObj(5*ww,10*hh,#foe)
+  AddObj(10*ww,5*hh,#foe)
+  AddObj(4*ww,4*hh,#money)
+EndProcedure  
 
 Procedure MakeRandMap()
   Protected x, y
@@ -144,7 +117,6 @@ Procedure DrawAllObj()
       Case #player 
         Box(x,y,ww,hh,#player)
       Case #foe
-        Debug "type="+type
         Box(x,y,ww,hh,#foe)
       Case #money
         Box(x,y,ww,hh,#money)
@@ -157,7 +129,7 @@ Procedure DrawAllObj()
       Case 0
         Box(x,y,ww,hh,0)
       Default
-        Debug "type="+type
+        Debug "type=DEAFULT"
         Box(x,y,ww,hh,#White)
     EndSelect
   Next
@@ -178,6 +150,9 @@ Macro moveIt
 EndMacro
 
 Procedure Move(param)
+  ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
+  
+;   If 
   ;player move
   SelectElement(all(),0)
   moveIt
@@ -199,9 +174,8 @@ AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_A,#left)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_D,#right)
 
-; start()
+start()
 DrawAllObj()
-
 
 Repeat
   Define event = WaitWindowEvent()
