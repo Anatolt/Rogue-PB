@@ -3,7 +3,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.3"
+#myName = "Rogue-PB v0.4"
 
 Structure objects
   x.w
@@ -12,6 +12,8 @@ Structure objects
 EndStructure
 
 Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW)
+; Global NewList all.objects(), worldW=700/2, worldH=700/2, ww=2, hh=2, Dim pWorld.l(worldH,worldW)
+;прога не компилится, если worldW!=worldH
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -53,31 +55,49 @@ Procedure.f noise(x.l,y.l)
 EndProcedure
 
 Procedure createMap()
-  Protected y, x, type, curnoise.f
+  Protected y, x, type, curnoise.f, none
   For y = 0 To worldH
     For x = 0 To worldW
       curnoise = Modulo(noise(x,y))
-;       Debug "x="+x+",y="+y+",noise="+curnoise
-      If curnoise > 0.5
-        type = Random(3)
-        Select type
-          Case #player 
-            pWorld(x,y) = #player
-          Case #foe
-            pWorld(x,y) = #foe
-          Case #money
-            pWorld(x,y) = #money
-          Case 0
-            pWorld(x,y) = 0
-          Case 1
-            pWorld(x,y) = #stone
-          Case 2 
-            pWorld(x,y) = #tree
-          Case 3
-            pWorld(x,y) = #water
-          Default
-            Debug "Creation of map type ERROR"
-        EndSelect
+      ;Debug "x="+x+",y="+y+",noise="+curnoise
+      If curnoise > 0.6
+        If ((x - 1 >= 0) And Not (pWorld(x - 1,y) = none)) 
+          pWorld(x,y) = pWorld(x - 1,y);
+        ElseIf ((x + 1 < worldW) And Not (pWorld(x + 1,y) = none)) 
+          pWorld(x,y) = pWorld(x + 1,y);
+        ElseIf ((y - 1 >= 0) And Not (pWorld(x,y - 1) = none)) 
+          pWorld(x,y) = pWorld(x,y - 1);
+        ElseIf ((y + 1 < worldH) And Not (pWorld(x,y + 1) = none)) 
+          pWorld(x,y) = pWorld(x,y + 1);
+        ElseIf ((x + 1 < worldW) And (y + 1 < worldH) And Not (pWorld(x + 1,y + 1) = none)) 
+          pWorld(x,y) = pWorld(x + 1,y + 1);
+        ElseIf ((x - 1 >= 0) And (y + 1 < worldH) And Not (pWorld(x - 1,y + 1) = none)) 
+          pWorld(x,y) = pWorld(x - 1,y + 1);
+        ElseIf ((x + 1 < worldW) And (y - 1 >= 0) And Not (pWorld(x + 1,y - 1) = none)) 
+          pWorld(x,y) = pWorld(x + 1,y - 1);
+        ElseIf ((x - 1 >= 0) And (y - 1 >= 0) And Not (pWorld(x - 1,y - 1) = none)) 
+          pWorld(x,y) = pWorld(x - 1,y - 1);
+        Else
+          type = Random(3)
+          Select type
+            Case #player 
+              pWorld(x,y) = #player
+            Case #foe
+              pWorld(x,y) = #foe
+            Case #money
+              pWorld(x,y) = #money
+            Case 0
+              pWorld(x,y) = 0
+            Case 1
+              pWorld(x,y) = #stone
+            Case 2 
+              pWorld(x,y) = #tree
+            Case 3
+              pWorld(x,y) = #water
+            Default
+              Debug "Creation of map type ERROR"
+          EndSelect
+        EndIf
       Else
         pWorld(x,y) = 0
       EndIf
@@ -85,8 +105,11 @@ Procedure createMap()
   Next
 EndProcedure
 
-Procedure start()
-  AddObj(0,0,#player)
+Procedure player_foe_money()
+  SelectElement(all(),0)
+  all()\x = 2*hh
+  all()\y = 2*ww
+  all()\type = #player
   AddObj(5*ww,10*hh,#foe)
   AddObj(10*ww,5*hh,#foe)
   AddObj(4*ww,4*hh,#money)
@@ -126,11 +149,11 @@ Procedure DrawAllObj()
         Box(x,y,ww,hh,#tree)
       Case #water
         Box(x,y,ww,hh,#water)
-      Case 0
-        Box(x,y,ww,hh,0)
-      Default
-        Debug "type=DEAFULT"
-        Box(x,y,ww,hh,#White)
+;       Case 0
+;         Box(x,y,ww,hh,0)
+;       Default
+;         Debug "type=DEAFULT"
+;         Box(x,y,ww,hh,#White)
     EndSelect
   Next
   StopDrawing()
@@ -150,12 +173,48 @@ Macro moveIt
 EndMacro
 
 Procedure Move(param)
+  Protected player_x, player_y, pX, pY
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
-  
-;   If 
-  ;player move
   SelectElement(all(),0)
-  moveIt
+  player_x = all()\x
+  pX = player_x/ww
+  player_y = all()\y
+  pY = player_y/hh
+  Debug "player_x="+pX+",player_y="+pY
+  ;player move
+  If pX < worldW And pX >= 0 And pY < worldH And pY >=0
+    Select param
+      Case #up
+        If Not pWorld(pY-1,pX)
+          all()\y - hh
+        Else
+          Debug "сверху занято"
+        EndIf
+      Case #down
+        If Not pWorld(pY+1,pX)
+          all()\y - hh
+        Else
+          Debug "снизу занято"
+        EndIf
+        all()\y + hh
+      Case #left
+        If Not pWorld(pY,pX-1)
+          all()\y - hh
+        Else
+          Debug "слева занято"
+        EndIf
+        all()\x - ww
+      Case #right
+        If Not pWorld(pY,pX+1)
+          all()\y - hh
+        Else
+          Debug "справа занято"
+        EndIf
+        all()\x + ww
+    EndSelect
+  Else
+    Debug "выходим за границы, уважаемый"
+  EndIf
   ;foe move
   SelectElement(all(),1)
   param = Random(3)
@@ -174,7 +233,7 @@ AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_A,#left)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_D,#right)
 
-start()
+player_foe_money()
 DrawAllObj()
 
 Repeat
