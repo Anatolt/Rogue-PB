@@ -11,8 +11,8 @@ Structure objects
   type.l ;   #player   #foe   #money   #stone   #tree   #water 
 EndStructure
 
-Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW)
-; Global NewList all.objects(), worldW=700/2, worldH=700/2, ww=2, hh=2, Dim pWorld.l(worldH,worldW)
+Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW) ;pX, pY
+; Global NewList all.objects(), worldW=900/2, worldH=900/2, ww=2, hh=2, Dim pWorld.l(worldH,worldW)
 ;прога не компилится, если worldW!=worldH
 
 #player = 16777215  ;white   RGB(255,255 ,255)
@@ -149,13 +149,9 @@ Procedure DrawAllObj()
         Box(x,y,ww,hh,#tree)
       Case #water
         Box(x,y,ww,hh,#water)
-;       Case 0
-;         Box(x,y,ww,hh,0)
-;       Default
-;         Debug "type=DEAFULT"
-;         Box(x,y,ww,hh,#White)
     EndSelect
   Next
+;   Box(pX*ww,pY*hh,ww,hh,#player)
   StopDrawing()
 EndProcedure
 
@@ -173,8 +169,8 @@ Macro moveIt
 EndMacro
 
 Procedure Move(param)
-  Protected player_x, player_y, pX, pY
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
+  Protected player_x, player_y, pX, pY
   SelectElement(all(),0)
   player_x = all()\x
   pX = player_x/ww
@@ -182,35 +178,32 @@ Procedure Move(param)
   pY = player_y/hh
   Debug "player_x="+pX+",player_y="+pY
   ;player move
-  If pX < worldW And pX >= 0 And pY < worldH And pY >=0
+  If pX < worldW And pX > 0 And pY < worldH And pY >0 ; этот код неправильный. он стопорит игрока на краю мира
     Select param
       Case #up
-        If Not pWorld(pY-1,pX)
-          all()\y - hh
+        If Not (pWorld(pY-1,pX) 
+          all()\y - hh;pY - 1
         Else
           Debug "сверху занято"
         EndIf
       Case #down
         If Not pWorld(pY+1,pX)
-          all()\y - hh
+          all()\y + hh
         Else
           Debug "снизу занято"
         EndIf
-        all()\y + hh
       Case #left
         If Not pWorld(pY,pX-1)
-          all()\y - hh
+          all()\x - ww
         Else
           Debug "слева занято"
         EndIf
-        all()\x - ww
       Case #right
         If Not pWorld(pY,pX+1)
-          all()\y - hh
+          all()\x + ww
         Else
           Debug "справа занято"
         EndIf
-        all()\x + ww
     EndSelect
   Else
     Debug "выходим за границы, уважаемый"
@@ -241,12 +234,16 @@ Repeat
   If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
     Select EventMenu()
       Case #up
+        Debug "нажата кнопка ВВЕРХ"
         Move(#up)
       Case #down
+        Debug "нажата кнопка ВНИЗ"
         Move(#down)
       Case #left
+        Debug "нажата кнопка ВЛЕВО"
         Move(#left)
       Case #right
+        Debug "нажата кнопка ВПРАВО"
         Move(#right)
     EndSelect
   EndIf
