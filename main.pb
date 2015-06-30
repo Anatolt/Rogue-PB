@@ -3,7 +3,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.4"
+#myName = "Rogue-PB v0.6"
 
 Structure objects
   x.w
@@ -11,9 +11,13 @@ Structure objects
   type.l ;   #player   #foe   #money   #stone   #tree   #water 
 EndStructure
 
-Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW) ;pX, pY
+Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh
+;pX, pY
 ; Global NewList all.objects(), worldW=900/2, worldH=900/2, ww=2, hh=2, Dim pWorld.l(worldH,worldW)
 ;прога не компилится, если worldW!=worldH
+
+
+
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -61,6 +65,7 @@ Procedure createMap()
       curnoise = Modulo(noise(x,y))
       ;Debug "x="+x+",y="+y+",noise="+curnoise
       If curnoise > 0.6
+        ;код который группирует похожие объекты. дерево - лес, камень - гряда, вода - озеро
         If ((x - 1 >= 0) And Not (pWorld(x - 1,y) = none)) 
           pWorld(x,y) = pWorld(x - 1,y);
         ElseIf ((x + 1 < worldW) And Not (pWorld(x + 1,y) = none)) 
@@ -110,9 +115,9 @@ Procedure player_foe_money()
   all()\x = 2*hh
   all()\y = 2*ww
   all()\type = #player
-  AddObj(5*ww,10*hh,#foe)
-  AddObj(10*ww,5*hh,#foe)
-  AddObj(4*ww,4*hh,#money)
+;   AddObj(5*ww,10*hh,#foe) ; Нжуно задать рандомные координаты 
+;   AddObj(10*ww,5*hh,#foe)
+;   AddObj(4*ww,4*hh,#money)
 EndProcedure  
 
 Procedure MakeRandMap()
@@ -129,7 +134,7 @@ MakeRandMap()
 Procedure DrawAllObj()
   Protected fin, i, x, y, type
   StartDrawing(CanvasOutput(#canva))
-  Box(0,0,worldW*ww,worldH*hh,0)
+  Box(0,0,www,hhh,0)
   fin = ListSize(all())-1
   For i = 0 To fin
     SelectElement(all(),i)
@@ -168,58 +173,91 @@ Macro moveIt
   EndSelect
 EndMacro
 
-Procedure Move(param)
+Procedure foeMove()
+  Protected pX, pY, param, ok
+  SelectElement(all(),1)
+  pX = all()\x / ww
+  pY = all()\y / hh
+  While Not ok
+    param = Random(3)
+    Select param
+      Case #up
+        If Not (pY = 0 Or pWorld(pX,pY-1))
+          all()\y - hh
+          ok = 1
+        Else
+          Debug "враг: сверху занято"
+        EndIf
+      Case #down
+        If Not (pWorld(pX,pY+1) Or pY = worldH-1)
+          all()\y + hh
+          ok = 1
+        Else
+          Debug "враг: снизу занято"
+        EndIf
+      Case #left
+        If Not (pX = 0 Or pWorld(pX-1,pY))
+          all()\x - ww
+          ok = 1
+        Else
+          Debug "враг: слева занято"
+        EndIf
+      Case #right
+        If Not (pWorld(pX+1,pY) Or pX = worldW-1)
+          all()\x + ww
+          ok = 1
+        Else
+          Debug "враг: справа занято"
+        EndIf
+    EndSelect
+  Wend
+  ok = 0
+EndProcedure
+
+Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
   Protected player_x, player_y, pX, pY
   SelectElement(all(),0)
-  player_x = all()\x
-  pX = player_x/ww
-  player_y = all()\y
-  pY = player_y/hh
-  Debug "player_x="+pX+",player_y="+pY
+  pX = all()\x / ww
+  pY = all()\y / hh
   ;player move
-  If pX < worldW And pX > 0 And pY < worldH And pY >0 ; этот код неправильный. он стопорит игрока на краю мира
-    Select param
-      Case #up
-        If Not (pWorld(pY-1,pX) 
-          all()\y - hh;pY - 1
-        Else
-          Debug "сверху занято"
-        EndIf
-      Case #down
-        If Not pWorld(pY+1,pX)
-          all()\y + hh
-        Else
-          Debug "снизу занято"
-        EndIf
-      Case #left
-        If Not pWorld(pY,pX-1)
-          all()\x - ww
-        Else
-          Debug "слева занято"
-        EndIf
-      Case #right
-        If Not pWorld(pY,pX+1)
-          all()\x + ww
-        Else
-          Debug "справа занято"
-        EndIf
-    EndSelect
-  Else
-    Debug "выходим за границы, уважаемый"
-  EndIf
+  Select param
+    Case #up
+      If Not (pY = 0 Or pWorld(pX,pY-1))
+        all()\y - hh;pY - 1
+        foeMove()
+      Else
+        Debug "сверху занято"
+      EndIf
+    Case #down
+      If Not (pWorld(pX,pY+1) Or pY = worldH-1)
+        all()\y + hh
+        foeMove()
+      Else
+        Debug "снизу занято"
+      EndIf
+    Case #left
+      If Not (pX = 0 Or pWorld(pX-1,pY))
+        all()\x - ww
+        foeMove()
+      Else
+        Debug "слева занято"
+      EndIf
+    Case #right
+      If Not (pWorld(pX+1,pY) Or pX = worldW-1)
+        all()\x + ww
+        foeMove()
+      Else
+        Debug "справа занято"
+      EndIf
+  EndSelect
+  ;если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
   ;foe move
-  SelectElement(all(),1)
-  param = Random(3)
-  moveIt
-  SelectElement(all(),2)
-  param = Random(3)
-  moveIt
   DrawAllObj()
 EndProcedure
 
-OpenWindow(#wnd,#PB_Any,#PB_Any,worldW*ww,worldH*hh,#myName,#PB_Window_SystemMenu | #PB_Window_MinimizeGadget | #PB_Window_ScreenCentered)
-CanvasGadget(#canva,0,0,worldW*ww,worldH*hh)
+OpenWindow(#wnd,#PB_Any,#PB_Any,www,hhh,#myName,#PB_Window_SystemMenu | #PB_Window_MinimizeGadget | #PB_Window_ScreenCentered)
+CanvasGadget(#canva,0,0,www,hhh)
 
 AddKeyboardShortcut(#wnd,#PB_Shortcut_W,#up)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
@@ -234,17 +272,17 @@ Repeat
   If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
     Select EventMenu()
       Case #up
-        Debug "нажата кнопка ВВЕРХ"
-        Move(#up)
+;         Debug "нажата кнопка ВВЕРХ"
+        playerMove(#up)
       Case #down
-        Debug "нажата кнопка ВНИЗ"
-        Move(#down)
+;         Debug "нажата кнопка ВНИЗ"
+        playerMove(#down)
       Case #left
-        Debug "нажата кнопка ВЛЕВО"
-        Move(#left)
+;         Debug "нажата кнопка ВЛЕВО"
+        playerMove(#left)
       Case #right
-        Debug "нажата кнопка ВПРАВО"
-        Move(#right)
+;         Debug "нажата кнопка ВПРАВО"
+        playerMove(#right)
     EndSelect
   EndIf
 Until event = #PB_Event_CloseWindow
