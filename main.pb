@@ -3,7 +3,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.6"
+#myName = "Rogue-PB v0.7"
 
 Structure objects
   x.w
@@ -110,14 +110,29 @@ Procedure createMap()
   Next
 EndProcedure
 
+Macro place
+  x = Random(29)
+  y = Random(29)
+  While pWorld(x,y)
+    x = Random(29)
+    y = Random(29)
+    all()\x = x*hh
+    all()\y = y*ww
+  Wend
+EndMacro
+
 Procedure player_foe_money()
+  Protected x, y
   SelectElement(all(),0)
-  all()\x = 2*hh
-  all()\y = 2*ww
+  place
   all()\type = #player
-;   AddObj(5*ww,10*hh,#foe) ; Нжуно задать рандомные координаты 
-;   AddObj(10*ww,5*hh,#foe)
-;   AddObj(4*ww,4*hh,#money)
+  SelectElement(all(),1)
+  place
+  all()\type = #foe
+  SelectElement(all(),2)
+  place
+  all()\type = #foe
+; AddObj(4*ww,4*hh,#money)
 EndProcedure  
 
 Procedure MakeRandMap()
@@ -161,21 +176,6 @@ Procedure DrawAllObj()
 EndProcedure
 
 Macro moveIt
-  Select param
-    Case #up
-      all()\y - hh
-    Case #down
-      all()\y + hh
-    Case #left
-      all()\x - ww
-    Case #right
-      all()\x + ww
-  EndSelect
-EndMacro
-
-Procedure foeMove()
-  Protected pX, pY, param, ok
-  SelectElement(all(),1)
   pX = all()\x / ww
   pY = all()\y / hh
   While Not ok
@@ -212,6 +212,16 @@ Procedure foeMove()
     EndSelect
   Wend
   ok = 0
+EndMacro
+
+
+
+Procedure foeMove()
+  Protected pX, pY, param, ok
+  SelectElement(all(),1)
+  moveIt
+  SelectElement(all(),2)
+  moveIt
 EndProcedure
 
 Procedure playerMove(param)
