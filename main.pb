@@ -3,7 +3,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.7"
+#myName = "Rogue-PB v0.8"
 
 Structure objects
   x.w
@@ -11,13 +11,9 @@ Structure objects
   type.l ;   #player   #foe   #money   #stone   #tree   #water 
 EndStructure
 
-Global NewList all.objects(), worldW=30, worldH=30, ww = 10, hh = 10, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh
-;pX, pY
-; Global NewList all.objects(), worldW=900/2, worldH=900/2, ww=2, hh=2, Dim pWorld.l(worldH,worldW)
+Global worldW=30, worldH=30
 ;прога не компилится, если worldW!=worldH
-
-
-
+Global NewList all.objects(), ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -110,29 +106,29 @@ Procedure createMap()
   Next
 EndProcedure
 
-Macro place
-  x = Random(29)
-  y = Random(29)
+Macro place(num,typ)
+  ;RandomSeed(Date())
+  SelectElement(all(),num)
+  x = Random(29,2)
+  y = Random(29,2)
   While pWorld(x,y)
-    x = Random(29)
-    y = Random(29)
+    x = Random(29,2)
+    y = Random(29,2)
     all()\x = x*hh
     all()\y = y*ww
   Wend
+  all()\type = typ
+  Debug "placing to " + Str(x) + "," + Str(y)
 EndMacro
 
 Procedure player_foe_money()
   Protected x, y
-  SelectElement(all(),0)
-  place
-  all()\type = #player
-  SelectElement(all(),1)
-  place
-  all()\type = #foe
-  SelectElement(all(),2)
-  place
-  all()\type = #foe
-; AddObj(4*ww,4*hh,#money)
+  place(0, #player)
+  place(1, #foe)
+  place(2, #foe)
+  place(3, #money)
+  place(4, #money)
+  place(5, #money)
 EndProcedure  
 
 Procedure MakeRandMap()
@@ -143,8 +139,6 @@ Procedure MakeRandMap()
     Next
   Next
 EndProcedure
-createMap()
-MakeRandMap()
 
 Procedure DrawAllObj()
   Protected fin, i, x, y, type
@@ -171,11 +165,12 @@ Procedure DrawAllObj()
         Box(x,y,ww,hh,#water)
     EndSelect
   Next
-;   Box(pX*ww,pY*hh,ww,hh,#player)
   StopDrawing()
 EndProcedure
 
-Macro moveIt
+Procedure moveIt(n)
+  Protected pX, pY, param, ok
+  SelectElement(all(),n)
   pX = all()\x / ww
   pY = all()\y / hh
   While Not ok
@@ -185,84 +180,61 @@ Macro moveIt
         If Not (pY = 0 Or pWorld(pX,pY-1))
           all()\y - hh
           ok = 1
-        Else
-          Debug "враг: сверху занято"
         EndIf
       Case #down
         If Not (pWorld(pX,pY+1) Or pY = worldH-1)
           all()\y + hh
           ok = 1
-        Else
-          Debug "враг: снизу занято"
         EndIf
       Case #left
         If Not (pX = 0 Or pWorld(pX-1,pY))
           all()\x - ww
           ok = 1
-        Else
-          Debug "враг: слева занято"
         EndIf
       Case #right
         If Not (pWorld(pX+1,pY) Or pX = worldW-1)
           all()\x + ww
           ok = 1
-        Else
-          Debug "враг: справа занято"
         EndIf
     EndSelect
   Wend
   ok = 0
-EndMacro
-
-
+EndProcedure
 
 Procedure foeMove()
-  Protected pX, pY, param, ok
-  SelectElement(all(),1)
-  moveIt
-  SelectElement(all(),2)
-  moveIt
+  moveIt(1)
+  moveIt(2)
 EndProcedure
 
 Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
+  ; если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
   Protected player_x, player_y, pX, pY
   SelectElement(all(),0)
   pX = all()\x / ww
   pY = all()\y / hh
-  ;player move
   Select param
     Case #up
       If Not (pY = 0 Or pWorld(pX,pY-1))
-        all()\y - hh;pY - 1
+        all()\y - hh
         foeMove()
-      Else
-        Debug "сверху занято"
       EndIf
     Case #down
       If Not (pWorld(pX,pY+1) Or pY = worldH-1)
         all()\y + hh
         foeMove()
-      Else
-        Debug "снизу занято"
       EndIf
     Case #left
       If Not (pX = 0 Or pWorld(pX-1,pY))
         all()\x - ww
         foeMove()
-      Else
-        Debug "слева занято"
       EndIf
     Case #right
       If Not (pWorld(pX+1,pY) Or pX = worldW-1)
         all()\x + ww
         foeMove()
-      Else
-        Debug "справа занято"
       EndIf
   EndSelect
-  ;если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
-  ;foe move
   DrawAllObj()
 EndProcedure
 
@@ -274,6 +246,8 @@ AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_A,#left)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_D,#right)
 
+createMap()
+MakeRandMap()
 player_foe_money()
 DrawAllObj()
 
