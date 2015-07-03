@@ -1,9 +1,10 @@
-﻿; http://pastebin.com/bJyN9Lb9
+﻿; http://pastebin.com/bJyN9Lb9 
+; оригинальный код на C (c) de7
 ; https://github.com/Anatolt/Rogue-PB
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.8"
+#myName = "Rogue-PB v0.9"
 
 Structure objects
   x.w
@@ -12,8 +13,9 @@ Structure objects
 EndStructure
 
 Global worldW=30, worldH=30
-;прога не компилится, если worldW!=worldH
-Global NewList all.objects(), ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh
+; прога не компилится, если worldW!=worldH
+; Global NewList all.objects(), ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh
+Global ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh;, playerX, playerY
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -31,13 +33,13 @@ Enumeration
   #wnd
 EndEnumeration
 
-Procedure AddObj(x,y,type)
-  AddElement(all())
-  all()\x = x
-  all()\y = y
-  all()\type = type
-;   Debug "x="+x+",y="+y+",type="+type
-EndProcedure
+; Procedure AddObj(x,y,type)
+;   AddElement(all())
+;   all()\x = x
+;   all()\y = y
+;   all()\type = type
+; ;   Debug "x="+x+",y="+y+",type="+type
+; EndProcedure
 
 Procedure.f Modulo(num.f)
   If num < 0
@@ -54,7 +56,7 @@ Procedure.f noise(x.l,y.l)
   ProcedureReturn (1.0 - q / 1073741824.0) 
 EndProcedure
 
-Procedure createMap()
+Procedure generateRandomMap()
   Protected y, x, type, curnoise.f, none
   For y = 0 To worldH
     For x = 0 To worldW
@@ -106,135 +108,141 @@ Procedure createMap()
   Next
 EndProcedure
 
-Macro place(num,typ)
-  ;RandomSeed(Date())
-  SelectElement(all(),num)
+Macro place(type)
   x = Random(29,2)
   y = Random(29,2)
   While pWorld(x,y)
+    Debug Str(x)+ "," + Str(y) + " занято"
     x = Random(29,2)
     y = Random(29,2)
-    all()\x = x*hh
-    all()\y = y*ww
   Wend
-  all()\type = typ
-  Debug "placing to " + Str(x) + "," + Str(y)
+  pWorld(x,y) = type
+  Debug "placing " +Str(type)+" To " + Str(x) + "," + Str(y)
 EndMacro
 
 Procedure player_foe_money()
   Protected x, y
-  place(0, #player)
-  place(1, #foe)
-  place(2, #foe)
-  place(3, #money)
-  place(4, #money)
-  place(5, #money)
+  place(#player)
+  place(#foe)
+  place(#foe)
+  place(#money)
+  place(#money)
+  place(#money)
 EndProcedure  
 
-Procedure MakeRandMap()
-  Protected x, y
-  For y = 0 To worldH
-    For x = 0 To worldW
-      AddObj(x*ww,y*hh,pWorld(x,y))
-    Next
-  Next
-EndProcedure
+Macro bx(param)
+Case param 
+  Box(pX,pY,ww,hh,param)
+EndMacro
 
 Procedure DrawAllObj()
-  Protected fin, i, x, y, type
+  Protected fin, i, x, y, type, pX, pY
   StartDrawing(CanvasOutput(#canva))
   Box(0,0,www,hhh,0)
-  fin = ListSize(all())-1
-  For i = 0 To fin
-    SelectElement(all(),i)
-    x = all()\x
-    y = all()\y
-    type = all()\type
-    Select type
-      Case #player 
-        Box(x,y,ww,hh,#player)
-      Case #foe
-        Box(x,y,ww,hh,#foe)
-      Case #money
-        Box(x,y,ww,hh,#money)
-      Case #stone
-        Box(x,y,ww,hh,#stone)
-      Case #tree 
-        Box(x,y,ww,hh,#tree)
-      Case #water
-        Box(x,y,ww,hh,#water)
-    EndSelect
+  For y = 0 To worldH
+    For x = 0 To worldW
+      type = pWorld(x,y)
+      pX = x * ww
+      pY = y * hh
+      Select type
+          bx(#player)
+          bx(#foe)
+          bx(#money)
+          bx(#stone)
+          bx(#tree)
+          bx(#water)
+      EndSelect
+    Next
   Next
   StopDrawing()
 EndProcedure
 
-Procedure moveIt(n)
-  Protected pX, pY, param, ok
-  SelectElement(all(),n)
-  pX = all()\x / ww
-  pY = all()\y / hh
-  While Not ok
-    param = Random(3)
-    Select param
-      Case #up
-        If Not (pY = 0 Or pWorld(pX,pY-1))
-          all()\y - hh
-          ok = 1
-        EndIf
-      Case #down
-        If Not (pWorld(pX,pY+1) Or pY = worldH-1)
-          all()\y + hh
-          ok = 1
-        EndIf
-      Case #left
-        If Not (pX = 0 Or pWorld(pX-1,pY))
-          all()\x - ww
-          ok = 1
-        EndIf
-      Case #right
-        If Not (pWorld(pX+1,pY) Or pX = worldW-1)
-          all()\x + ww
-          ok = 1
-        EndIf
-    EndSelect
-  Wend
-  ok = 0
+Procedure foeMove()
+  Protected param, ok, pX, pY, x ,y
+  pX = 0
+  pY = 0
+  For y = 0 To worldH
+    For x = 0 To worldW
+      If pWorld(x,y) = #foe
+        pX = x
+        pY = y
+        While Not ok
+          param = Random(3)
+          Select param
+            Case #up
+              If Not (pY = 0 Or pWorld(pX,pY-1))
+                pY - 1
+                ok = 1
+              EndIf
+            Case #down
+              If Not (pWorld(pX,pY+1) Or pY = worldH-1)
+                pY + 1
+                ok = 1
+              EndIf
+            Case #left
+              If Not (pX = 0 Or pWorld(pX-1,pY))
+                pX - 1
+                ok = 1
+              EndIf
+            Case #right
+              If Not (pWorld(pX+1,pY) Or pX = worldW-1)
+                pX + 1
+                ok = 1
+              EndIf
+          EndSelect
+        Wend
+        ok = 0
+        pWorld(x,y) = 0
+        pWorld(pX,pY) = #foe
+      EndIf
+    Next
+  Next
 EndProcedure
 
-Procedure foeMove()
-  moveIt(1)
-  moveIt(2)
-EndProcedure
+Macro fuckro   
+  pWorld(x,y) = 0
+  pWorld(pX,pY) = #player
+  foeMove()
+  Break
+EndMacro
 
 Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
   ; если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
-  Protected player_x, player_y, pX, pY
-  SelectElement(all(),0)
-  pX = all()\x / ww
-  pY = all()\y / hh
-  Select param
-    Case #up
-      If Not (pY = 0 Or pWorld(pX,pY-1))
-        all()\y - hh
-        foeMove()
+  Protected pX, pY, x, y
+  ; pY = playerY
+  ; pX = playerX
+  For y = 0 To worldH
+    For x = 0 To worldW
+      If pWorld(x,y) = #player
+        pX = x
+        pY = y
+        Select param
+          Case #up
+            If Not (pY = 0 Or pWorld(pX,pY-1))
+              pY - 1
+              fuckro
+            EndIf
+          Case #down
+            If Not (pWorld(pX,pY+1) Or pY = worldH-1)
+              pY + 1
+              fuckro
+            EndIf
+          Case #left
+            If Not (pX = 0 Or pWorld(pX-1,pY))
+              pX - 1
+              fuckro
+            EndIf
+          Case #right
+            If Not (pWorld(pX+1,pY) Or pX = worldW-1)
+              pX + 1
+              fuckro
+            EndIf
+        EndSelect
       EndIf
-    Case #down
-      If Not (pWorld(pX,pY+1) Or pY = worldH-1)
-        all()\y + hh
-        foeMove()
-      EndIf
-    Case #left
-      If Not (pX = 0 Or pWorld(pX-1,pY))
-        all()\x - ww
-        foeMove()
-      EndIf
-    Case #right
-      If Not (pWorld(pX+1,pY) Or pX = worldW-1)
-        all()\x + ww
-        foeMove()
-      EndIf
-  EndSelect
+    Next
+  Next
+  ;   Debug Str(playerX)+","+Str(playerY)
   DrawAllObj()
 EndProcedure
 
@@ -246,8 +254,7 @@ AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_A,#left)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_D,#right)
 
-createMap()
-MakeRandMap()
+generateRandomMap()
 player_foe_money()
 DrawAllObj()
 
@@ -256,16 +263,16 @@ Repeat
   If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
     Select EventMenu()
       Case #up
-;         Debug "нажата кнопка ВВЕРХ"
+        ;         Debug "нажата кнопка ВВЕРХ"
         playerMove(#up)
       Case #down
-;         Debug "нажата кнопка ВНИЗ"
+        ;         Debug "нажата кнопка ВНИЗ"
         playerMove(#down)
       Case #left
-;         Debug "нажата кнопка ВЛЕВО"
+        ;         Debug "нажата кнопка ВЛЕВО"
         playerMove(#left)
       Case #right
-;         Debug "нажата кнопка ВПРАВО"
+        ;         Debug "нажата кнопка ВПРАВО"
         playerMove(#right)
     EndSelect
   EndIf
