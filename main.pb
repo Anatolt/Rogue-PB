@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.9"
+#myName = "Rogue-PB v0.10"
 
 Structure objects
   x.w
@@ -147,9 +147,12 @@ Procedure DrawAllObj()
       Select type
           bx(#player)
           bx(#foe)
-          bx(#money)
+        Case #money 
+          Circle(pX+ww/2,pY+ww/2,ww/2-1,#money)
           bx(#stone)
-          bx(#tree)
+        Case #tree 
+          Box(pX,pY,ww,hh/2,#tree)
+          Box(pX+hh/2,pY+ww/2,ww/10,hh/2,RGB(150, 75, 0))
           bx(#water)
       EndSelect
     Next
@@ -159,8 +162,6 @@ EndProcedure
 
 Procedure foeMove()
   Protected param, ok, pX, pY, x ,y
-  pX = 0
-  pY = 0
   For y = 0 To worldH
     For x = 0 To worldW
       If pWorld(x,y) = #foe
@@ -210,8 +211,6 @@ Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
   ; если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
   Protected pX, pY, x, y
-  ; pY = playerY
-  ; pX = playerX
   For y = 0 To worldH
     For x = 0 To worldW
       If pWorld(x,y) = #player
@@ -219,22 +218,26 @@ Procedure playerMove(param)
         pY = y
         Select param
           Case #up
-            If Not (pY = 0 Or pWorld(pX,pY-1))
+            If Not (pY = 0 Or pWorld(pX,pY-1)) Or pWorld(pX,pY-1) = #money
+              pWorld(pX,pY-1) = 0
               pY - 1
               fuckro
             EndIf
           Case #down
-            If Not (pWorld(pX,pY+1) Or pY = worldH-1)
+            If Not (pY = worldH-1 Or pWorld(pX,pY+1)) Or pWorld(pX,pY+1) = #money
+              pWorld(pX,pY+1) = 0
               pY + 1
               fuckro
             EndIf
           Case #left
-            If Not (pX = 0 Or pWorld(pX-1,pY))
+            If Not (pX = 0 Or pWorld(pX-1,pY)) Or pWorld(pX-1,pY) = #money
+              pWorld(pX-1,pY) = 0
               pX - 1
               fuckro
             EndIf
           Case #right
-            If Not (pWorld(pX+1,pY) Or pX = worldW-1)
+            If Not (pX = worldW-1 Or pWorld(pX+1,pY)) Or pWorld(pX+1,pY) = #money
+              pWorld(pX+1,pY) = 0
               pX + 1
               fuckro
             EndIf
@@ -263,16 +266,16 @@ Repeat
   If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
     Select EventMenu()
       Case #up
-        ;         Debug "нажата кнопка ВВЕРХ"
+        ;Debug "нажата кнопка ВВЕРХ"
         playerMove(#up)
       Case #down
-        ;         Debug "нажата кнопка ВНИЗ"
+        ;Debug "нажата кнопка ВНИЗ"
         playerMove(#down)
       Case #left
-        ;         Debug "нажата кнопка ВЛЕВО"
+        ;Debug "нажата кнопка ВЛЕВО"
         playerMove(#left)
       Case #right
-        ;         Debug "нажата кнопка ВПРАВО"
+        ;Debug "нажата кнопка ВПРАВО"
         playerMove(#right)
     EndSelect
   EndIf
