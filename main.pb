@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.10"
+#myName = "Rogue-PB v0.11"
 
 Structure objects
   x.w
@@ -14,7 +14,6 @@ EndStructure
 
 Global worldW=30, worldH=30
 ; прога не компилится, если worldW!=worldH
-; Global NewList all.objects(), ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh
 Global ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh;, playerX, playerY
 
 #player = 16777215  ;white   RGB(255,255 ,255)
@@ -32,14 +31,6 @@ Enumeration
   #canva
   #wnd
 EndEnumeration
-
-; Procedure AddObj(x,y,type)
-;   AddElement(all())
-;   all()\x = x
-;   all()\y = y
-;   all()\type = type
-; ;   Debug "x="+x+",y="+y+",type="+type
-; EndProcedure
 
 Procedure.f Modulo(num.f)
   If num < 0
@@ -62,7 +53,7 @@ Procedure generateRandomMap()
     For x = 0 To worldW
       curnoise = Modulo(noise(x,y))
       ;Debug "x="+x+",y="+y+",noise="+curnoise
-      If curnoise > 0.6
+      If curnoise > 0.7
         ;код который группирует похожие объекты. дерево - лес, камень - гряда, вода - озеро
         If ((x - 1 >= 0) And Not (pWorld(x - 1,y) = none)) 
           pWorld(x,y) = pWorld(x - 1,y);
@@ -109,12 +100,12 @@ Procedure generateRandomMap()
 EndProcedure
 
 Macro place(type)
-  x = Random(29,2)
-  y = Random(29,2)
+  x = Random(worldW,2)
+  y = Random(worldH,2)
   While pWorld(x,y)
     Debug Str(x)+ "," + Str(y) + " занято"
-    x = Random(29,2)
-    y = Random(29,2)
+    x = Random(worldW,2)
+    y = Random(worldH,2)
   Wend
   pWorld(x,y) = type
   Debug "placing " +Str(type)+" To " + Str(x) + "," + Str(y)
@@ -174,21 +165,29 @@ Procedure foeMove()
               If Not (pY = 0 Or pWorld(pX,pY-1))
                 pY - 1
                 ok = 1
+              ElseIf pWorld(pX,pY-1) = #player
+                MessageRequester(#myName,"Player is dead. Game Over")
               EndIf
             Case #down
               If Not (pWorld(pX,pY+1) Or pY = worldH-1)
                 pY + 1
                 ok = 1
+              ElseIf pWorld(pX,pY+1) = #player
+                MessageRequester(#myName,"Player is dead. Game Over")
               EndIf
             Case #left
               If Not (pX = 0 Or pWorld(pX-1,pY))
                 pX - 1
                 ok = 1
+              ElseIf pWorld(pX-1,pY) = #player
+                MessageRequester(#myName,"Player is dead. Game Over")
               EndIf
             Case #right
               If Not (pWorld(pX+1,pY) Or pX = worldW-1)
                 pX + 1
                 ok = 1
+              ElseIf pWorld(pX+1,pY) = #player
+                MessageRequester(#myName,"Player is dead. Game Over")
               EndIf
           EndSelect
         Wend
