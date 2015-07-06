@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://www.purebasic.com/namespace" version="1.0" creator="PureBasic 5.31 (Windows - x86)">
+<project xmlns="http://www.purebasic.com/namespace" version="1.0" creator="PureBasic 5.31 (Windows - x64)">
   <section name="config">
     <options closefiles="1" openmode="0" name="Rogue-PB"/>
   </section>
   <section name="data">
     <explorer view="C:\Program Files (x86)\PureBasic\Examples\" pattern="0"/>
     <log show="1"/>
-    <lastopen date="2015-07-02 22:17" user="Tolik" host="R580"/>
+    <lastopen date="2015-07-07 01:42" user="Maria" host="MN"/>
   </section>
   <section name="files">
     <file name="main.pb">
       <config load="0" scan="1" panel="1" warn="1" lastopen="1" panelstate="+"/>
-      <fingerprint md5="efe2b278dbf9052a5c890a5aef983708"/>
+      <fingerprint md5="6a7b98c5790c858c718953f1d9904044"/>
     </file>
   </section>
   <section name="targets">

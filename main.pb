@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.11"
+#myName = "Rogue-PB v0.12"
 
 Structure objects
   x.w
@@ -14,7 +14,7 @@ EndStructure
 
 Global worldW=30, worldH=30
 ; прога не компилится, если worldW!=worldH
-Global ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh;, playerX, playerY
+Global ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh, playerX, playerY
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -74,12 +74,6 @@ Procedure generateRandomMap()
         Else
           type = Random(3)
           Select type
-            Case #player 
-              pWorld(x,y) = #player
-            Case #foe
-              pWorld(x,y) = #foe
-            Case #money
-              pWorld(x,y) = #money
             Case 0
               pWorld(x,y) = 0
             Case 1
@@ -88,8 +82,6 @@ Procedure generateRandomMap()
               pWorld(x,y) = #tree
             Case 3
               pWorld(x,y) = #water
-            Default
-              Debug "Creation of map type ERROR"
           EndSelect
         EndIf
       Else
@@ -151,49 +143,62 @@ Procedure DrawAllObj()
   StopDrawing()
 EndProcedure
 
-Procedure foeMove()
+Macro dead
+  MessageRequester(#myName,"Player is dead. Game Over")
+EndMacro
+
+Procedure proverka_napravlenij(param = 0)
+  Protected ok, pX, pY, x ,y
+  Select param
+    Case #up
+      If Not (pY = 0 Or pWorld(pX,pY-1))
+        pY - 1
+        ProcedureReturn #True
+      ElseIf Not pY = 0 And pWorld(pX,pY-1) = #player
+        dead
+      EndIf
+    Case #down
+      If Not (pWorld(pX,pY+1) Or pY = worldH-1)
+        pY + 1
+        ProcedureReturn #True
+      ElseIf pWorld(pX,pY+1) = #player
+        dead
+      EndIf
+    Case #left
+      If Not (pX = 0 Or pWorld(pX-1,pY))
+        pX - 1
+        ProcedureReturn #True
+      ElseIf Not pX = 0 And pWorld(pX-1,pY) = #player
+        dead
+      EndIf
+    Case #right
+      If Not (pWorld(pX+1,pY) Or pX = worldW-1)
+        pX + 1
+        ProcedureReturn #True
+      ElseIf pWorld(pX+1,pY) = #player
+        dead
+      EndIf
+  EndSelect
+EndProcedure
+
+Procedure foeMove(playerX,playerY)
   Protected param, ok, pX, pY, x ,y
   For y = 0 To worldH
     For x = 0 To worldW
       If pWorld(x,y) = #foe
         pX = x
         pY = y
-        While Not ok
-          param = Random(3)
-          Select param
-            Case #up
-              If Not (pY = 0 Or pWorld(pX,pY-1))
-                pY - 1
-                ok = 1
-              ElseIf pWorld(pX,pY-1) = #player
-                MessageRequester(#myName,"Player is dead. Game Over")
-              EndIf
-            Case #down
-              If Not (pWorld(pX,pY+1) Or pY = worldH-1)
-                pY + 1
-                ok = 1
-              ElseIf pWorld(pX,pY+1) = #player
-                MessageRequester(#myName,"Player is dead. Game Over")
-              EndIf
-            Case #left
-              If Not (pX = 0 Or pWorld(pX-1,pY))
-                pX - 1
-                ok = 1
-              ElseIf pWorld(pX-1,pY) = #player
-                MessageRequester(#myName,"Player is dead. Game Over")
-              EndIf
-            Case #right
-              If Not (pWorld(pX+1,pY) Or pX = worldW-1)
-                pX + 1
-                ok = 1
-              ElseIf pWorld(pX+1,pY) = #player
-                MessageRequester(#myName,"Player is dead. Game Over")
-              EndIf
-          EndSelect
-        Wend
-        ok = 0
-        pWorld(x,y) = 0
-        pWorld(pX,pY) = #foe
+        If pX > playerX
+          If proverka_napravlenij(#left)
+            pWorld(x,y) = 0
+            pWorld(pX,pY) = #foe
+          Else
+            While Not proverka_napravlenij()
+              param = Random(3)
+              proverka_napravlenij(param)
+            Wend
+          EndIf
+        EndIf
       EndIf
     Next
   Next
@@ -202,7 +207,9 @@ EndProcedure
 Macro fuckro   
   pWorld(x,y) = 0
   pWorld(pX,pY) = #player
-  foeMove()
+  playerX = pX
+  playerY = pY
+  foeMove(playerX,playerY)
   Break
 EndMacro
 
