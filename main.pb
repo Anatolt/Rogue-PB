@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.12"
+#myName = "Rogue-PB v0.13"
 
 Structure objects
   x.w
@@ -147,8 +147,8 @@ Macro dead
   MessageRequester(#myName,"Player is dead. Game Over")
 EndMacro
 
-Procedure proverka_napravlenij(param = 0)
-  Protected ok, pX, pY, x ,y
+Procedure proverka_napravlenij(pX,pY,param = 0)
+  Protected ok, x ,y
   Select param
     Case #up
       If Not (pY = 0 Or pWorld(pX,pY-1))
@@ -161,7 +161,7 @@ Procedure proverka_napravlenij(param = 0)
       If Not (pWorld(pX,pY+1) Or pY = worldH-1)
         pY + 1
         ProcedureReturn #True
-      ElseIf pWorld(pX,pY+1) = #player
+      ElseIf Not pY = worldH-1 And pWorld(pX,pY+1) = #player
         dead
       EndIf
     Case #left
@@ -189,16 +189,26 @@ Procedure foeMove(playerX,playerY)
         pX = x
         pY = y
         If pX > playerX
-          If proverka_napravlenij(#left)
-            pWorld(x,y) = 0
-            pWorld(pX,pY) = #foe
-          Else
-            While Not proverka_napravlenij()
+          If Not proverka_napravlenij(pX,pY,#left)
+            param = Random(3)
+            While Not proverka_napravlenij(pX,pY,param)
+              Debug "we are in while"
               param = Random(3)
-              proverka_napravlenij(param)
+              proverka_napravlenij(pX,pY,param)
             Wend
+            Debug "ended ok"
           EndIf
+        Else
+          param = Random(3)
+            While Not proverka_napravlenij(pX,pY,param)
+              Debug "we are in while"
+              param = Random(3)
+              proverka_napravlenij(pX,pY,param)
+            Wend
+            Debug "ended ok"
         EndIf
+        pWorld(x,y) = 0
+        pWorld(pX,pY) = #foe
       EndIf
     Next
   Next
@@ -272,16 +282,16 @@ Repeat
   If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
     Select EventMenu()
       Case #up
-        ;Debug "нажата кнопка ВВЕРХ"
+        Debug "нажата кнопка ВВЕРХ"
         playerMove(#up)
       Case #down
-        ;Debug "нажата кнопка ВНИЗ"
+        Debug "нажата кнопка ВНИЗ"
         playerMove(#down)
       Case #left
-        ;Debug "нажата кнопка ВЛЕВО"
+        Debug "нажата кнопка ВЛЕВО"
         playerMove(#left)
       Case #right
-        ;Debug "нажата кнопка ВПРАВО"
+        Debug "нажата кнопка ВПРАВО"
         playerMove(#right)
     EndSelect
   EndIf
