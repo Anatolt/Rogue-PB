@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.13"
+#myName = "Rogue-PB v0.14"
 
 Structure objects
   x.w
@@ -92,6 +92,14 @@ Procedure generateRandomMap()
 EndProcedure
 
 Macro place(type)
+;   Select type
+;     Case 16777215
+;       txt$ = "#player"
+;     Case 255
+;       txt$ = "#foe"
+;     Case 65535
+;       txt$ = "#money"
+;   EndSelect
   x = Random(worldW,2)
   y = Random(worldH,2)
   While pWorld(x,y)
@@ -100,11 +108,11 @@ Macro place(type)
     y = Random(worldH,2)
   Wend
   pWorld(x,y) = type
-  Debug "placing " +Str(type)+" To " + Str(x) + "," + Str(y)
+  Debug "placing " +txt$+" To " + Str(x) + "," + Str(y)
 EndMacro
 
 Procedure player_foe_money()
-  Protected x, y
+  Protected x, y, txt$
   place(#player)
   place(#foe)
   place(#foe)
@@ -147,79 +155,53 @@ Macro dead
   MessageRequester(#myName,"Player is dead. Game Over")
 EndMacro
 
-Procedure proverka_napravlenij(pX,pY,param = 0)
-  Protected ok, x ,y
+Procedure proverka_napravlenij(pX, pY, param)
   Select param
     Case #up
-      If Not (pY = 0 Or pWorld(pX,pY-1))
-        pY - 1
-        ProcedureReturn #True
-      ElseIf Not pY = 0 And pWorld(pX,pY-1) = #player
-        dead
+      If Not pY = 0 
+        ProcedureReturn pWorld(pX,pY-1)
       EndIf
     Case #down
-      If Not (pWorld(pX,pY+1) Or pY = worldH-1)
-        pY + 1
-        ProcedureReturn #True
-      ElseIf Not pY = worldH-1 And pWorld(pX,pY+1) = #player
-        dead
+      If Not pY = worldH-1
+        ProcedureReturn pWorld(pX,pY+1)
       EndIf
     Case #left
-      If Not (pX = 0 Or pWorld(pX-1,pY))
-        pX - 1
-        ProcedureReturn #True
-      ElseIf Not pX = 0 And pWorld(pX-1,pY) = #player
-        dead
+      If Not pX = 0
+        ProcedureReturn pWorld(pX-1,pY)
       EndIf
     Case #right
-      If Not (pWorld(pX+1,pY) Or pX = worldW-1)
-        pX + 1
-        ProcedureReturn #True
-      ElseIf pWorld(pX+1,pY) = #player
-        dead
+      If Not pX = worldW-1
+        ProcedureReturn pWorld(pX+1,pY)
       EndIf
   EndSelect
 EndProcedure
 
 Procedure foeMove(playerX,playerY)
-  Protected param, ok, pX, pY, x ,y
-  For y = 0 To worldH
-    For x = 0 To worldW
-      If pWorld(x,y) = #foe
-        pX = x
-        pY = y
-        If pX > playerX
-          If Not proverka_napravlenij(pX,pY,#left)
-            param = Random(3)
-            While Not proverka_napravlenij(pX,pY,param)
-              Debug "we are in while"
-              param = Random(3)
-              proverka_napravlenij(pX,pY,param)
-            Wend
-            Debug "ended ok"
-          EndIf
-        Else
-          param = Random(3)
-            While Not proverka_napravlenij(pX,pY,param)
-              Debug "we are in while"
-              param = Random(3)
-              proverka_napravlenij(pX,pY,param)
-            Wend
-            Debug "ended ok"
-        EndIf
-        pWorld(x,y) = 0
-        pWorld(pX,pY) = #foe
-      EndIf
-    Next
-  Next
+;   Protected param, ok, pX, pY, x ,y
+;   For y = 0 To worldH
+;     For x = 0 To worldW
+;       If pWorld(x,y) = #foe
+;         pX = x
+;         pY = y
+;         If pX > playerX
+;             proverka_napravlenij(pX, pY, #left)
+;               Debug "we are in while"
+;               param = Random(3)
+;               proverka_napravlenij(pX, pY, param)
+;             Debug "while ended ok"
+;           EndIf
+;         Else
+;         EndIf
+;         pWorld(x,y) = 0
+;         pWorld(pX,pY) = #foe
+;     Next
+;   Next
 EndProcedure
 
-Macro fuckro   
+Macro fuckro
   pWorld(x,y) = 0
   pWorld(pX,pY) = #player
-  playerX = pX
-  playerY = pY
-  foeMove(playerX,playerY)
+  foeMove(pX,pY)
   Break
 EndMacro
 
@@ -229,31 +211,27 @@ Procedure playerMove(param)
   Protected pX, pY, x, y
   For y = 0 To worldH
     For x = 0 To worldW
-      If pWorld(x,y) = #player
+      If pWorld(x,y) = #player    
         pX = x
         pY = y
         Select param
           Case #up
-            If Not (pY = 0 Or pWorld(pX,pY-1)) Or pWorld(pX,pY-1) = #money
-              pWorld(pX,pY-1) = 0
+            If Not proverka_napravlenij(x,y,param) Or pWorld(pX,pY-1) = #money
               pY - 1
               fuckro
             EndIf
           Case #down
-            If Not (pY = worldH-1 Or pWorld(pX,pY+1)) Or pWorld(pX,pY+1) = #money
-              pWorld(pX,pY+1) = 0
+            If Not proverka_napravlenij(x,y,param) Or pWorld(pX,pY+1) = #money
               pY + 1
               fuckro
             EndIf
           Case #left
-            If Not (pX = 0 Or pWorld(pX-1,pY)) Or pWorld(pX-1,pY) = #money
-              pWorld(pX-1,pY) = 0
+            If Not proverka_napravlenij(x,y,param) Or pWorld(pX-1,pY) = #money
               pX - 1
               fuckro
             EndIf
           Case #right
-            If Not (pX = worldW-1 Or pWorld(pX+1,pY)) Or pWorld(pX+1,pY) = #money
-              pWorld(pX+1,pY) = 0
+            If Not proverka_napravlenij(x,y,param) Or pWorld(pX+1,pY) = #money
               pX + 1
               fuckro
             EndIf
