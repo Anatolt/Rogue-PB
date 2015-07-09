@@ -12,9 +12,9 @@ Structure objects
   type.l ;   #player   #foe   #money   #stone   #tree   #water 
 EndStructure
 
-Global worldW=30, worldH=30
+Global worldW=10, worldH=10
 ; прога не компилится, если worldW!=worldH
-Global ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = worldH*hh, playerX, playerY
+Global ww = 20, hh = 20, Dim pWorld.l(worldH+1,worldW+1), www = worldW*ww, hhh = worldH*hh, Money;,playerX, playerY, 
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -29,6 +29,7 @@ Global ww = 20, hh = 20, Dim pWorld.l(worldH,worldW), www = worldW*ww, hhh = wor
 
 Enumeration
   #canva
+  #status
   #wnd
 EndEnumeration
 
@@ -87,6 +88,10 @@ Procedure generateRandomMap()
       Else
         pWorld(x,y) = 0
       EndIf
+      pWorld(0,y) = #stone
+      pWorld(x,0) = #stone
+      pWorld(x,worldW+1) = #stone
+      pWorld(worldH+1,y) = #stone
     Next
   Next
 EndProcedure
@@ -127,19 +132,20 @@ Case param
 EndMacro
 
 Procedure DrawAllObj()
-  Protected fin, i, x, y, type, pX, pY
+  Protected i, x, y, type, pX, pY
   StartDrawing(CanvasOutput(#canva))
   Box(0,0,www,hhh,0)
-  For y = 0 To worldH
-    For x = 0 To worldW
+  For y = 1 To worldH
+    For x = 1 To worldW
       type = pWorld(x,y)
-      pX = x * ww
-      pY = y * hh
+      pX = x * ww - ww
+      pY = y * hh - hh
       Select type
           bx(#player)
           bx(#foe)
         Case #money 
           Circle(pX+ww/2,pY+ww/2,ww/2-1,#money)
+          Money+1
           bx(#stone)
         Case #tree 
           Box(pX,pY,ww,hh/2,#tree)
@@ -149,32 +155,12 @@ Procedure DrawAllObj()
     Next
   Next
   StopDrawing()
+  SetGadgetText(#status,"Coins: "+Str(Money))
 EndProcedure
 
 Macro dead
   MessageRequester(#myName,"Player is dead. Game Over")
 EndMacro
-
-Procedure proverka_napravlenij(pX, pY, param)
-  Select param
-    Case #up
-      If Not pY = 0 
-        ProcedureReturn pWorld(pX,pY-1)
-      EndIf
-    Case #down
-      If Not pY = worldH-1
-        ProcedureReturn pWorld(pX,pY+1)
-      EndIf
-    Case #left
-      If Not pX = 0
-        ProcedureReturn pWorld(pX-1,pY)
-      EndIf
-    Case #right
-      If Not pX = worldW-1
-        ProcedureReturn pWorld(pX+1,pY)
-      EndIf
-  EndSelect
-EndProcedure
 
 Procedure foeMove(playerX,playerY)
 ;   Protected param, ok, pX, pY, x ,y
@@ -216,22 +202,29 @@ Procedure playerMove(param)
         pY = y
         Select param
           Case #up
-            If Not proverka_napravlenij(x,y,param) Or pWorld(pX,pY-1) = #money
+            If pWorld(pX,pY-1) = #money
+              pY - 1
+              fuckro
+              ;               Money(-1)
+            ElseIf pWorld(pX,pY-1) 
+              Break
+              
+            Else
               pY - 1
               fuckro
             EndIf
           Case #down
-            If Not proverka_napravlenij(x,y,param) Or pWorld(pX,pY+1) = #money
+            If Not pWorld(pX,pY+1) Or pWorld(pX,pY+1) = #money
               pY + 1
               fuckro
             EndIf
           Case #left
-            If Not proverka_napravlenij(x,y,param) Or pWorld(pX-1,pY) = #money
+            If Not pWorld(pX-1,pY) Or pWorld(pX-1,pY) = #money
               pX - 1
               fuckro
             EndIf
           Case #right
-            If Not proverka_napravlenij(x,y,param) Or pWorld(pX+1,pY) = #money
+            If Not pWorld(pX+1,pY) Or pWorld(pX+1,pY) = #money
               pX + 1
               fuckro
             EndIf
@@ -243,8 +236,9 @@ Procedure playerMove(param)
   DrawAllObj()
 EndProcedure
 
-OpenWindow(#wnd,#PB_Any,#PB_Any,www,hhh,#myName,#PB_Window_SystemMenu | #PB_Window_MinimizeGadget | #PB_Window_ScreenCentered)
+OpenWindow(#wnd,#PB_Any,#PB_Any,www,hhh+20,#myName,#PB_Window_SystemMenu | #PB_Window_MinimizeGadget | #PB_Window_ScreenCentered)
 CanvasGadget(#canva,0,0,www,hhh)
+TextGadget(#status,hhh,0,www,20,"hi")
 
 AddKeyboardShortcut(#wnd,#PB_Shortcut_W,#up)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
