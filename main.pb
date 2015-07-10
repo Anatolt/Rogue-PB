@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.14"
+#myName = "Rogue-PB v0.15"
 
 Structure objects
   x.w
@@ -14,7 +14,7 @@ EndStructure
 
 Global worldW=10, worldH=10
 ; прога не компилится, если worldW!=worldH
-Global ww = 20, hh = 20, Dim pWorld.l(worldH+1,worldW+1), www = worldW*ww, hhh = worldH*hh, Money;,playerX, playerY, 
+Global ww = 20, hh = 20, Dim pWorld.l(worldH+1,worldW+1), www = worldW*ww, hhh = worldH*hh, Money, pX, pY;,playerX, playerY, 
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -184,50 +184,54 @@ Procedure foeMove(playerX,playerY)
 ;   Next
 EndProcedure
 
-Macro fuckro
-  pWorld(x,y) = 0
-  pWorld(pX,pY) = #player
-  foeMove(pX,pY)
-  Break
+Macro movemove(axis, arg, sub)
+  If axis = "x"
+    pX = sub
+  ElseIf axis = "y"
+    pY = sub
+  EndIf
+  If arg = #money
+    pWorld(x,y) = 0
+    pWorld(pX,pY) = #player
+    ;Money(-1)
+    Break
+  ElseIf arg
+    pX = 0
+    pY = 0
+    Break
+  Else
+    pWorld(x,y) = 0
+    pWorld(pX,pY) = #player
+    Break
+  EndIf
 EndMacro
 
 Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
   ; если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
-  Protected pX, pY, x, y
+  Protected x, y, arg, sub
   For y = 0 To worldH
     For x = 0 To worldW
-      If pWorld(x,y) = #player    
+      If pWorld(x,y) = #player
         pX = x
         pY = y
         Select param
           Case #up
-            If pWorld(pX,pY-1) = #money
-              pY - 1
-              fuckro
-              ;               Money(-1)
-            ElseIf pWorld(pX,pY-1) 
-              Break
-              
-            Else
-              pY - 1
-              fuckro
-            EndIf
+            sub = pY-1
+            arg = pWorld(pX,sub)
+            movemove("y", arg, sub)
           Case #down
-            If Not pWorld(pX,pY+1) Or pWorld(pX,pY+1) = #money
-              pY + 1
-              fuckro
-            EndIf
+            sub = pY+1
+            arg = pWorld(pX,sub)
+            movemove("y", arg, sub)
           Case #left
-            If Not pWorld(pX-1,pY) Or pWorld(pX-1,pY) = #money
-              pX - 1
-              fuckro
-            EndIf
+            sub = pX-1
+            arg = pWorld(sub,pY)
+            movemove("x", arg, sub)
           Case #right
-            If Not pWorld(pX+1,pY) Or pWorld(pX+1,pY) = #money
-              pX + 1
-              fuckro
-            EndIf
+            sub = pX+1
+            arg = pWorld(sub,pY)
+            movemove("x", arg, sub)
         EndSelect
       EndIf
     Next
