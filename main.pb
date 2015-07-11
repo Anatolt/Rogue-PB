@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.15"
+#myName = "Rogue-PB v0.16"
 
 Structure objects
   x.w
@@ -14,7 +14,7 @@ EndStructure
 
 Global worldW=10, worldH=10
 ; прога не компилится, если worldW!=worldH
-Global ww = 20, hh = 20, Dim pWorld.l(worldH+1,worldW+1), www = worldW*ww, hhh = worldH*hh, Money, pX, pY;,playerX, playerY, 
+Global ww = 20, hh = 20, Dim pWorld.l(worldH+1,worldW+1), www = worldW*ww, hhh = worldH*hh, Money, playerX, playerY;, pX, pY
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -31,6 +31,10 @@ Enumeration
   #canva
   #status
   #wnd
+  ; #up
+  ; #down
+  ; #left
+  ; #right
 EndEnumeration
 
 Procedure.f Modulo(num.f)
@@ -88,6 +92,7 @@ Procedure generateRandomMap()
       Else
         pWorld(x,y) = 0
       EndIf
+      ; строим оградку вокруг мира
       pWorld(0,y) = #stone
       pWorld(x,0) = #stone
       pWorld(x,worldW+1) = #stone
@@ -118,12 +123,21 @@ EndMacro
 
 Procedure player_foe_money()
   Protected x, y, txt$
-  place(#player)
   place(#foe)
   place(#foe)
   place(#money)
   place(#money)
   place(#money)
+  ;place player
+  x = Random(worldW,2)
+  y = Random(worldH,2)
+  While pWorld(x,y)
+    Debug Str(x)+ "," + Str(y) + " занято"
+    x = Random(worldW,2)
+    y = Random(worldH,2)
+  Wend
+  playerX = x
+  playerY = y
 EndProcedure  
 
 Macro bx(param)
@@ -141,7 +155,7 @@ Procedure DrawAllObj()
       pX = x * ww - ww
       pY = y * hh - hh
       Select type
-          bx(#player)
+;           bx(#player)
           bx(#foe)
         Case #money 
           Circle(pX+ww/2,pY+ww/2,ww/2-1,#money)
@@ -154,6 +168,7 @@ Procedure DrawAllObj()
       EndSelect
     Next
   Next
+  Box(playerX*ww,playerY*hh,ww,hh,#player)
   StopDrawing()
   SetGadgetText(#status,"Coins: "+Str(Money))
 EndProcedure
@@ -184,59 +199,55 @@ Procedure foeMove(playerX,playerY)
 ;   Next
 EndProcedure
 
-Macro movemove(axis, arg, sub)
-  If axis = "x"
-    pX = sub
-  ElseIf axis = "y"
-    pY = sub
-  EndIf
-  If arg = #money
-    pWorld(x,y) = 0
-    pWorld(pX,pY) = #player
-    ;Money(-1)
-    Break
-  ElseIf arg
-    pX = 0
-    pY = 0
-    Break
-  Else
-    pWorld(x,y) = 0
-    pWorld(pX,pY) = #player
-    Break
-  EndIf
-EndMacro
-
 Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
   ; если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
-  Protected x, y, arg, sub
-  For y = 0 To worldH
-    For x = 0 To worldW
-      If pWorld(x,y) = #player
-        pX = x
-        pY = y
+  Protected x, y, arg, sub, pX, pY
+  pX = playerX
+  pY = playerY
         Select param
           Case #up
             sub = pY-1
             arg = pWorld(pX,sub)
-            movemove("y", arg, sub)
+            If Not arg
+              PlayerY-1
+            ElseIf arg = #money
+              pWorld(pX,sub) = 0
+              PlayerY-1
+            EndIf
+            
           Case #down
             sub = pY+1
             arg = pWorld(pX,sub)
-            movemove("y", arg, sub)
+            If Not arg
+              PlayerY+1
+            ElseIf arg = #money
+              pWorld(pX,sub) = 0
+              PlayerY+1
+            EndIf
+            
           Case #left
             sub = pX-1
             arg = pWorld(sub,pY)
-            movemove("x", arg, sub)
+            If Not arg
+              PlayerX-1
+            ElseIf arg = #money
+              pWorld(pX,sub) = 0
+              PlayerX-1
+            EndIf
+            
           Case #right
             sub = pX+1
             arg = pWorld(sub,pY)
-            movemove("x", arg, sub)
+            If Not arg
+              PlayerX+1
+            ElseIf arg = #money
+              pWorld(pX,sub) = 0
+              PlayerX+1
+            EndIf
+            
         EndSelect
-      EndIf
-    Next
-  Next
-  ;   Debug Str(playerX)+","+Str(playerY)
+  Debug Str(playerX)+","+Str(playerY)
   DrawAllObj()
 EndProcedure
 
