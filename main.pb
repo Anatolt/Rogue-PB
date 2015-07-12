@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.16"
+#myName = "Rogue-PB v0.17"
 
 Structure objects
   x.w
@@ -101,15 +101,19 @@ Procedure generateRandomMap()
   Next
 EndProcedure
 
+Procedure.s num2names(type)
+  Protected txt$
+  If type = 16777215
+    txt$ = "#player"
+  ElseIf type = 255
+    txt$ = "#foe"
+  ElseIf type = 65535
+    txt$ = "#money"
+  EndIf
+  ProcedureReturn txt$
+EndProcedure
+  
 Macro place(type)
-;   Select type
-;     Case 16777215
-;       txt$ = "#player"
-;     Case 255
-;       txt$ = "#foe"
-;     Case 65535
-;       txt$ = "#money"
-;   EndSelect
   x = Random(worldW,2)
   y = Random(worldH,2)
   While pWorld(x,y)
@@ -118,7 +122,7 @@ Macro place(type)
     y = Random(worldH,2)
   Wend
   pWorld(x,y) = type
-  Debug "placing " +txt$+" To " + Str(x) + "," + Str(y)
+  Debug "placing "+num2names(type)+" To " + Str(x) + "," + Str(y)
 EndMacro
 
 Procedure player_foe_money()
@@ -155,7 +159,6 @@ Procedure DrawAllObj()
       pX = x * ww - ww
       pY = y * hh - hh
       Select type
-;           bx(#player)
           bx(#foe)
         Case #money 
           Circle(pX+ww/2,pY+ww/2,ww/2-1,#money)
@@ -168,7 +171,7 @@ Procedure DrawAllObj()
       EndSelect
     Next
   Next
-  Box(playerX*ww,playerY*hh,ww,hh,#player)
+  Box(playerX*ww-ww,playerY*hh-hh,ww,hh,#player)
   StopDrawing()
   SetGadgetText(#status,"Coins: "+Str(Money))
 EndProcedure
@@ -177,77 +180,94 @@ Macro dead
   MessageRequester(#myName,"Player is dead. Game Over")
 EndMacro
 
+Macro pMove(axis,sub,arg)
+  If axis = "y"
+    pY = sub
+  ElseIf axis = "x"
+    pX = sub
+  EndIf
+  If Not arg
+    ok = 1
+  ElseIf arg = #money
+    pWorld(pX,pY) = 0
+    ok = 1
+  Else
+    Debug "занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
+  EndIf
+EndMacro
+
 Procedure foeMove(playerX,playerY)
-;   Protected param, ok, pX, pY, x ,y
-;   For y = 0 To worldH
-;     For x = 0 To worldW
-;       If pWorld(x,y) = #foe
-;         pX = x
-;         pY = y
-;         If pX > playerX
-;             proverka_napravlenij(pX, pY, #left)
-;               Debug "we are in while"
-;               param = Random(3)
-;               proverka_napravlenij(pX, pY, param)
-;             Debug "while ended ok"
-;           EndIf
-;         Else
-;         EndIf
-;         pWorld(x,y) = 0
-;         pWorld(pX,pY) = #foe
-;     Next
-;   Next
+  Protected x, y, arg, sub, pX, pY, ok, param
+  For y = 1 To worldH
+    For x = 1 To worldW
+      If pWorld(x,y) = #foe
+        Debug "we find a foe"
+        pX = x
+        pY = y
+        param = Random(3)
+        Select param
+          Case #up
+            sub = pY-1
+            arg = pWorld(pX,sub)
+            pMove("y",sub,arg)
+            
+          Case #down
+            sub = pY+1
+            arg = pWorld(pX,sub)
+            pMove("y",sub,arg) 
+            
+          Case #left
+            sub = pX-1
+            arg = pWorld(sub,pY)
+            pMove("x",sub,arg)
+            
+          Case #right
+            sub = pX+1
+            arg = pWorld(sub,pY)
+            pMove("x",sub,arg)
+        EndSelect
+      EndIf
+      If ok
+        pWorld(x,y) = 0
+        pWorld(pX,pY) = #foe
+      EndIf
+      ok = 0
+    Next
+  Next
 EndProcedure
 
 Procedure playerMove(param)
   ; если соседний объект не проходим или соседний объект край уровня - ничего не делать
   ; если двинулся игрок - двигаются враги. если игрок не двигался - враги тоже не двигаются
-  Protected x, y, arg, sub, pX, pY
+  Protected arg, sub, pX, pY, ok
   pX = playerX
   pY = playerY
-        Select param
-          Case #up
-            sub = pY-1
-            arg = pWorld(pX,sub)
-            If Not arg
-              PlayerY-1
-            ElseIf arg = #money
-              pWorld(pX,sub) = 0
-              PlayerY-1
-            EndIf
-            
-          Case #down
-            sub = pY+1
-            arg = pWorld(pX,sub)
-            If Not arg
-              PlayerY+1
-            ElseIf arg = #money
-              pWorld(pX,sub) = 0
-              PlayerY+1
-            EndIf
-            
-          Case #left
-            sub = pX-1
-            arg = pWorld(sub,pY)
-            If Not arg
-              PlayerX-1
-            ElseIf arg = #money
-              pWorld(pX,sub) = 0
-              PlayerX-1
-            EndIf
-            
-          Case #right
-            sub = pX+1
-            arg = pWorld(sub,pY)
-            If Not arg
-              PlayerX+1
-            ElseIf arg = #money
-              pWorld(pX,sub) = 0
-              PlayerX+1
-            EndIf
-            
-        EndSelect
-  Debug Str(playerX)+","+Str(playerY)
+  Select param
+    Case #up
+      sub = pY-1
+      arg = pWorld(pX,sub)
+      pMove("y",sub,arg)
+    Case #down
+      sub = pY+1
+      arg = pWorld(pX,sub)
+      pMove("y",sub,arg) 
+    Case #left
+      sub = pX-1
+      arg = pWorld(sub,pY)
+      pMove("x",sub,arg)
+      
+    Case #right
+      sub = pX+1
+      arg = pWorld(sub,pY)
+      pMove("x",sub,arg)
+      
+  EndSelect
+  If ok
+    playerY = pY
+    playerX = pX
+    foeMove(playerX, playerY)
+  EndIf
+  ok = 0
   DrawAllObj()
 EndProcedure
 
@@ -269,16 +289,16 @@ Repeat
   If event = #PB_Event_Menu And #PB_EventType_Focus ; only if mouse on canvas
     Select EventMenu()
       Case #up
-        Debug "нажата кнопка ВВЕРХ"
+;         Debug "нажата кнопка ВВЕРХ"
         playerMove(#up)
       Case #down
-        Debug "нажата кнопка ВНИЗ"
+;         Debug "нажата кнопка ВНИЗ"
         playerMove(#down)
       Case #left
-        Debug "нажата кнопка ВЛЕВО"
+;         Debug "нажата кнопка ВЛЕВО"
         playerMove(#left)
       Case #right
-        Debug "нажата кнопка ВПРАВО"
+;         Debug "нажата кнопка ВПРАВО"
         playerMove(#right)
     EndSelect
   EndIf
