@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.17"
+#myName = "Rogue-PB v0.18"
 
 Structure objects
   x.w
@@ -12,9 +12,8 @@ Structure objects
   type.l ;   #player   #foe   #money   #stone   #tree   #water 
 EndStructure
 
-Global worldW=10, worldH=10
-; прога не компилится, если worldW!=worldH
-Global ww = 20, hh = 20, Dim pWorld.l(worldH+1,worldW+1), www = worldW*ww, hhh = worldH*hh, Money, playerX, playerY;, pX, pY
+Global worldW=60, worldH=40
+Global ww = 8, hh = 12, Dim pWorld.l(worldW+1,worldH+1), www = worldW*ww, hhh = worldH*hh, Money, Lvl, playerX, playerY;, pX, pY
 
 #player = 16777215  ;white   RGB(255,255 ,255)
 #foe = 255          ;red     RGB(255,0   ,0)
@@ -95,8 +94,8 @@ Procedure generateRandomMap()
       ; строим оградку вокруг мира
       pWorld(0,y) = #stone
       pWorld(x,0) = #stone
-      pWorld(x,worldW+1) = #stone
-      pWorld(worldH+1,y) = #stone
+      pWorld(x,worldH+1) = #stone
+      pWorld(worldW+1,y) = #stone
     Next
   Next
 EndProcedure
@@ -126,12 +125,12 @@ Macro place(type)
 EndMacro
 
 Procedure player_foe_money()
-  Protected x, y, txt$
-  place(#foe)
-  place(#foe)
-  place(#money)
-  place(#money)
-  place(#money)
+  Protected x, y, i, txt$
+  For i = 1 To Lvl
+    place(#foe)
+    place(#money)
+  Next
+  Money = Lvl
   ;place player
   x = Random(worldW,2)
   y = Random(worldH,2)
@@ -151,6 +150,14 @@ EndMacro
 
 Procedure DrawAllObj()
   Protected i, x, y, type, pX, pY
+  If Money
+    SetGadgetText(#status,"Coins: "+Str(Money)+" Lvl: "+Str(Lvl))
+  Else
+    Lvl+1
+    MessageRequester(#myName,"You collect all coins. Welcome to "+Str(Lvl)+" level")
+    generateRandomMap()
+    player_foe_money()
+  EndIf
   StartDrawing(CanvasOutput(#canva))
   Box(0,0,www,hhh,0)
   For y = 1 To worldH
@@ -162,18 +169,16 @@ Procedure DrawAllObj()
           bx(#foe)
         Case #money 
           Circle(pX+ww/2,pY+ww/2,ww/2-1,#money)
-          Money+1
           bx(#stone)
         Case #tree 
           Box(pX,pY,ww,hh/2,#tree)
-          Box(pX+hh/2,pY+ww/2,ww/10,hh/2,RGB(150, 75, 0))
+          Box(pX+hh/4,pY+ww/2,ww/4,hh/2,RGB(150, 75, 0))
           bx(#water)
       EndSelect
     Next
   Next
   Box(playerX*ww-ww,playerY*hh-hh,ww,hh,#player)
   StopDrawing()
-  SetGadgetText(#status,"Coins: "+Str(Money))
 EndProcedure
 
 Macro dead
@@ -190,6 +195,7 @@ Macro pMove(axis,sub,arg)
     ok = 1
   ElseIf arg = #money
     pWorld(pX,pY) = 0
+    Money - 1
     ok = 1
   Else
     Debug "занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
@@ -273,7 +279,7 @@ EndProcedure
 
 OpenWindow(#wnd,#PB_Any,#PB_Any,www,hhh+20,#myName,#PB_Window_SystemMenu | #PB_Window_MinimizeGadget | #PB_Window_ScreenCentered)
 CanvasGadget(#canva,0,0,www,hhh)
-TextGadget(#status,hhh,0,www,20,"hi")
+TextGadget(#status,0,hhh,www,20,"",#PB_Text_Center)
 
 AddKeyboardShortcut(#wnd,#PB_Shortcut_W,#up)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
