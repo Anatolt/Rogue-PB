@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.19"
+#myName = "Rogue-PB v0.20"
 
 Structure objects
   x.w
@@ -25,11 +25,12 @@ Global ww = 8, hh = 12, Dim pWorld.l(worldW+1,worldH+1), www = worldW*ww, hhh = 
 #down = 1
 #left = 2
 #right = 3
+#canva = 4
+#status = 5
+#wnd = 6
+#restart = 7
 
 Enumeration
-  #canva
-  #status
-  #wnd
   ; #up
   ; #down
   ; #left
@@ -148,6 +149,18 @@ Case param
   Box(pX,pY,ww,hh,param)
 EndMacro
 
+Procedure start()
+  Lvl = 1
+EndProcedure
+
+Procedure restart()
+;   Protected x, y
+;   FreeArray(pWorld())
+  generateRandomMap()
+  player_foe_money()
+  count = 0
+EndProcedure
+
 Procedure DrawAllObj()
   Protected i, x, y, type, pX, pY
   If Money
@@ -155,8 +168,7 @@ Procedure DrawAllObj()
   Else
     Lvl+1
     MessageRequester(#myName,"You collect all coins. Welcome to "+Str(Lvl)+" level")
-    generateRandomMap()
-    player_foe_money()
+    restart()
   EndIf
   StartDrawing(CanvasOutput(#canva))
   Box(0,0,www,hhh,0)
@@ -183,6 +195,7 @@ EndProcedure
 
 Macro dead
   MessageRequester(#myName,"Player is dead. Game Over")
+  restart()
 EndMacro
 
 Macro pMove(axis,sub,arg)
@@ -226,17 +239,14 @@ Procedure foeMove(playerX,playerY)
               sub = pY-1
               arg = pWorld(pX,sub)
               pMove("y",sub,arg)
-              
             Case #down
               sub = pY+1
               arg = pWorld(pX,sub)
               pMove("y",sub,arg) 
-              
             Case #left
               sub = pX-1
               arg = pWorld(sub,pY)
               pMove("x",sub,arg)
-              
             Case #right
               sub = pX+1
               arg = pWorld(sub,pY)
@@ -285,9 +295,9 @@ Procedure playerMove(param)
     playerY = pY
     playerX = pX
     foeMove(playerX, playerY)
+    count + 1
   EndIf
   ok = 0
-  count + 1
   DrawAllObj()
 EndProcedure
 
@@ -299,9 +309,8 @@ AddKeyboardShortcut(#wnd,#PB_Shortcut_W,#up)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_S,#down)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_A,#left)
 AddKeyboardShortcut(#wnd,#PB_Shortcut_D,#right)
+AddKeyboardShortcut(#wnd,#PB_Shortcut_F5,#restart)
 
-generateRandomMap()
-player_foe_money()
 DrawAllObj()
 
 Repeat
@@ -320,6 +329,8 @@ Repeat
       Case #right
         ;         Debug "нажата кнопка ВПРАВО"
         playerMove(#right)
+      Case #restart
+        restart()
     EndSelect
   EndIf
 Until event = #PB_Event_CloseWindow
