@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.20"
+#myName = "Rogue-PB v0.21"
 
 Structure objects
   x.w
@@ -53,6 +53,7 @@ Procedure.f noise(x.l,y.l)
 EndProcedure
 
 Procedure generateRandomMap()
+  Dim pWorld.l(worldW+1,worldH+1)
   Protected y, x, type, curnoise.f, none
   For y = 0 To worldH
     For x = 0 To worldW
@@ -127,11 +128,11 @@ EndMacro
 
 Procedure player_foe_money()
   Protected x, y, i, txt$
-  For i = 1 To Lvl
+  For i = 1 To Lvl+2
     place(#foe)
     place(#money)
   Next
-  Money = Lvl
+  Money = Lvl+2
   ;place player
   x = Random(worldW,2)
   y = Random(worldH,2)
@@ -155,7 +156,7 @@ EndProcedure
 
 Procedure restart()
 ;   Protected x, y
-;   FreeArray(pWorld())
+  FreeArray(pWorld())
   generateRandomMap()
   player_foe_money()
   count = 0
@@ -233,7 +234,11 @@ Procedure foeMove(playerX,playerY)
         pX = x
         pY = y
         Repeat 
-          param = Random(3)
+          If pX > PlayerX
+            param = #left
+          Else
+            param = Random(3)
+          EndIf
           Select param
             Case #up
               sub = pY-1
