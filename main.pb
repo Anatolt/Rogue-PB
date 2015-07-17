@@ -128,7 +128,7 @@ EndMacro
 
 Procedure player_foe_money()
   Protected x, y, i, txt$
-  For i = 1 To Lvl+2
+  For i = 1 To Lvl
     place(#foe)
     place(#money)
   Next
@@ -212,17 +212,23 @@ Macro pMove(axis,sub,arg)
     Money - 1
     ok = 1
   Else
-    If player
       Debug "Ход:"+Str(count)+" Игрок: занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
-    Else
-      Debug "Ход:"+Str(count)+" Враг: занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
-    EndIf
-  EndIf
-  If ok
-    player = 0
   EndIf
 EndMacro
 
+Macro fMove(axis,sub,arg)
+  If axis = "y"
+    pY = sub
+  ElseIf axis = "x"
+    pX = sub
+  EndIf
+  If Not arg
+    ok = 1
+  Else
+    Debug "Ход:"+Str(count)+" Враг: занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
+  EndIf
+EndMacro
+  
 Procedure foeMove(playerX,playerY)
   Protected x, y, arg, sub, pX, pY, ok, param, player
   For y = 1 To worldH
@@ -233,39 +239,35 @@ Procedure foeMove(playerX,playerY)
         EndIf
         pX = x
         pY = y
-        Repeat 
-          If pX > PlayerX
-            param = #left
+        If pX > PlayerX
+          Debug "пробуем идти налево"
+          If pWorld(x-1,y)
+            Debug "слева занято, пробуем наверх"
+            If pWorld(x,y-1)
+              Debug "сверху занято, пробуем направо"
+              If pWorld(x+1,y)
+                Debug "справа занято. пробуем вниз"
+                If pWorld(x,y+1)
+                  Debug "внизу занято. идти некуда. стоим на месте"
+                Else
+                  pWorld(x,y) = 0
+                  pWorld(x,y+1) = #foe
+                EndIf
+              Else
+                pWorld(x,y) = 0
+                pWorld(x+1,y) = #foe
+              EndIf
+            Else
+              pWorld(x,y) = 0
+              pWorld(x,y-1) = #foe
+            EndIf
           Else
-            param = Random(3)
-          EndIf
-          Select param
-            Case #up
-              sub = pY-1
-              arg = pWorld(pX,sub)
-              pMove("y",sub,arg)
-            Case #down
-              sub = pY+1
-              arg = pWorld(pX,sub)
-              pMove("y",sub,arg) 
-            Case #left
-              sub = pX-1
-              arg = pWorld(sub,pY)
-              pMove("x",sub,arg)
-            Case #right
-              sub = pX+1
-              arg = pWorld(sub,pY)
-              pMove("x",sub,arg)
-          EndSelect
-          If ok
             pWorld(x,y) = 0
-            pWorld(pX,pY) = #foe
-          Else
-            pX = x
-            pY = y
+            pWorld(x-1,y) = #foe
+;             Break
           EndIf
-          ok = 0
-        Until Not ok
+          Break
+        EndIf
       EndIf
     Next
   Next
