@@ -4,7 +4,7 @@
 
 EnableExplicit
 
-#myName = "Rogue-PB v0.21"
+#myName = "Rogue-PB v0.23"
 
 Structure objects
   x.w
@@ -29,6 +29,7 @@ Global ww = 8, hh = 12, Dim pWorld.l(worldW+1,worldH+1), www = worldW*ww, hhh = 
 #status = 5
 #wnd = 6
 #restart = 7
+#foeMoved = 256
 
 Enumeration
   ; #up
@@ -216,18 +217,26 @@ Macro pMove(axis,sub,arg)
   EndIf
 EndMacro
 
-Macro fMove(axis,sub,arg)
-  If axis = "y"
-    pY = sub
-  ElseIf axis = "x"
-    pX = sub
+Procedure fMove(pX,pY,type)
+  Protected sub, arg
+  Select type
+    Case #up
+      sub = pY-1
+      arg = pWorld(pX,sub)
+    Case #down
+      sub = pY+1
+      arg = pWorld(pX,sub)
+    Case #left
+      sub = pX-1
+      arg = pWorld(sub,pY)
+    Case #right
+      sub = pX+1
+      arg = pWorld(sub,pY)
+  EndSelect
+  If arg
+    ProcedureReturn #True
   EndIf
-  If Not arg
-    ok = 1
-  Else
-    Debug "Ход:"+Str(count)+" Враг: занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
-  EndIf
-EndMacro
+EndProcedure
   
 Procedure foeMove(playerX,playerY)
   Protected x, y, arg, sub, pX, pY, ok, param, player
@@ -240,33 +249,12 @@ Procedure foeMove(playerX,playerY)
         pX = x
         pY = y
         If pX > PlayerX
-          Debug "пробуем идти налево"
-          If pWorld(x-1,y)
-            Debug "слева занято, пробуем наверх"
-            If pWorld(x,y-1)
-              Debug "сверху занято, пробуем направо"
-              If pWorld(x+1,y)
-                Debug "справа занято. пробуем вниз"
-                If pWorld(x,y+1)
-                  Debug "внизу занято. идти некуда. стоим на месте"
-                Else
-                  pWorld(x,y) = 0
-                  pWorld(x,y+1) = #foe
-                EndIf
-              Else
-                pWorld(x,y) = 0
-                pWorld(x+1,y) = #foe
-              EndIf
-            Else
-              pWorld(x,y) = 0
-              pWorld(x,y-1) = #foe
-            EndIf
-          Else
+          If fMove(pX,pY,#left)
             pWorld(x,y) = 0
-            pWorld(x-1,y) = #foe
-;             Break
-          EndIf
-          Break
+            pWorld(x-1,y) = #foeMoved
+          Else
+            fMove(x,y,Random(3))
+          EndIf 
         EndIf
       EndIf
     Next
