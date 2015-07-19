@@ -234,6 +234,7 @@ Procedure fMove(pX,pY,type)
       arg = pWorld(sub,pY)
   EndSelect
   If arg
+    Debug 1
     ProcedureReturn #True
   EndIf
 EndProcedure
@@ -255,7 +256,21 @@ Procedure foeMove(playerX,playerY)
           Else
             fMove(x,y,Random(3))
           EndIf 
+        Else
+          If fMove(pX,pY,#right)
+            pWorld(x,y) = 0
+            pWorld(x-1,y) = #foeMoved
+          Else
+            fMove(x,y,Random(3))
+          EndIf 
         EndIf
+      EndIf
+    Next
+  Next
+  For y = 1 To worldH
+    For x = 1 To worldW
+      If pWorld(x,y) = #foeMoved
+         pWorld(x,y) = #foe
       EndIf
     Next
   Next
