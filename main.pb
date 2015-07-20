@@ -234,13 +234,12 @@ Procedure fMove(pX,pY,type)
       arg = pWorld(sub,pY)
   EndSelect
   If arg
-    Debug 1
-    ProcedureReturn #True
+    ProcedureReturn type
   EndIf
 EndProcedure
   
 Procedure foeMove(playerX,playerY)
-  Protected x, y, arg, sub, pX, pY, ok, param, player
+  Protected x, y, arg, sub, pX, pY, ok, param, player, type
   For y = 1 To worldH
     For x = 1 To worldW
       If pWorld(x,y) = #foe
@@ -254,7 +253,25 @@ Procedure foeMove(playerX,playerY)
             pWorld(x,y) = 0
             pWorld(x-1,y) = #foeMoved
           Else
-            fMove(x,y,Random(3))
+            Repeat
+            param = Random(3)
+            If fMove(x,y,param)
+              pWorld(x,y) = 0
+              Select type
+                Case #up
+                  pWorld(x,y-1) = #foeMoved
+                Case #down
+                  pWorld(x,y+1) = #foeMoved
+                Case #left
+                  pWorld(x-1,y) = #foeMoved
+                Case #right
+                  pWorld(x+1,y) = #foeMoved
+              EndSelect
+              ok = 1
+            Else
+              ok = 0
+            EndIf
+          Until ok = 0
           EndIf 
         Else
           If fMove(pX,pY,#right)
