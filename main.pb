@@ -60,7 +60,7 @@ Procedure generateRandomMap()
     For x = 0 To worldW
       curnoise = Modulo(noise(x,y))
       ;Debug "x="+x+",y="+y+",noise="+curnoise
-      If curnoise > 0.7
+      If curnoise > 0.9
         ;код который группирует похожие объекты. дерево - лес, камень - гряда, вода - озеро
         If ((x - 1 >= 0) And Not (pWorld(x - 1,y) = none)) 
           pWorld(x,y) = pWorld(x - 1,y);
@@ -156,7 +156,7 @@ Procedure start()
 EndProcedure
 
 Procedure restart()
-;   Protected x, y
+  ;   Protected x, y
   FreeArray(pWorld())
   generateRandomMap()
   player_foe_money()
@@ -213,7 +213,7 @@ Macro pMove(axis,sub,arg)
     Money - 1
     ok = 1
   Else
-      Debug "Ход:"+Str(count)+" Игрок: занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
+    Debug "Ход:"+Str(count)+" Игрок: занято "+Str(pX)+","+Str(pY)+","+Str(pWorld(pX,pY))
   EndIf
 EndMacro
 
@@ -237,9 +237,9 @@ Procedure fMove(pX,pY,type)
     ProcedureReturn type
   EndIf
 EndProcedure
-  
+
 Procedure foeMove(playerX,playerY)
-  Protected x, y, arg, sub, pX, pY, ok, param, player, type
+  Protected x, y, arg, sub, pX, pY, ok, param, player, type, ccc
   For y = 1 To worldH
     For x = 1 To worldW
       If pWorld(x,y) = #foe
@@ -253,11 +253,45 @@ Procedure foeMove(playerX,playerY)
             pWorld(x,y) = 0
             pWorld(x-1,y) = #foeMoved
           Else
+            Debug "Cant move left. Try random"
             Repeat
-            param = Random(3)
+              ccc + 1
+              param = Random(3)
+              Debug "We are here "+Str(param)+",try"+Str(ccc)
+              If fMove(x,y,param)
+                pWorld(x,y) = 0
+                Select param
+                  Case #up
+                    pWorld(x,y-1) = #foeMoved
+                  Case #down
+                    pWorld(x,y+1) = #foeMoved
+                  Case #left
+                    pWorld(x-1,y) = #foeMoved
+                  Case #right
+                    pWorld(x+1,y) = #foeMoved
+                  Default
+                    Debug "I here by mistake"
+                EndSelect
+                ok = 1
+              Else
+                ok = 0
+              EndIf
+            Until ok = 0
+          EndIf 
+        Else
+          Debug "Player not at left. Try right"
+          If fMove(pX,pY,#right)
+            pWorld(x,y) = 0
+            pWorld(x-1,y) = #foeMoved
+          Else
+            Debug "Cant move right. Try random"
+            Repeat
+              ccc + 1
+              param = Random(3)
+              Debug "We are here "+Str(param)+",try"+Str(ccc)
             If fMove(x,y,param)
               pWorld(x,y) = 0
-              Select type
+              Select param
                 Case #up
                   pWorld(x,y-1) = #foeMoved
                 Case #down
@@ -266,19 +300,14 @@ Procedure foeMove(playerX,playerY)
                   pWorld(x-1,y) = #foeMoved
                 Case #right
                   pWorld(x+1,y) = #foeMoved
+                Default
+                  Debug "I here by mistake"
               EndSelect
               ok = 1
             Else
               ok = 0
             EndIf
           Until ok = 0
-          EndIf 
-        Else
-          If fMove(pX,pY,#right)
-            pWorld(x,y) = 0
-            pWorld(x-1,y) = #foeMoved
-          Else
-            fMove(x,y,Random(3))
           EndIf 
         EndIf
       EndIf
@@ -287,7 +316,7 @@ Procedure foeMove(playerX,playerY)
   For y = 1 To worldH
     For x = 1 To worldW
       If pWorld(x,y) = #foeMoved
-         pWorld(x,y) = #foe
+        pWorld(x,y) = #foe
       EndIf
     Next
   Next
