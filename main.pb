@@ -233,7 +233,7 @@ Procedure fMove(pX,pY,type)
       sub = pX+1
       arg = pWorld(sub,pY)
   EndSelect
-  If arg
+  If Not arg
     ProcedureReturn type
   EndIf
 EndProcedure
@@ -246,68 +246,16 @@ Procedure foeMove(playerX,playerY)
         If x = PlayerX And y = PlayerY
           dead
         EndIf
-        pX = x
-        pY = y
-        If pX > PlayerX
-          If fMove(pX,pY,#left)
+        If pX < PlayerX
+          If fMove(x,y,#right)
             pWorld(x,y) = 0
-            pWorld(x-1,y) = #foeMoved
-          Else
-            Debug "Cant move left. Try random"
-            Repeat
-              ccc + 1
-              param = Random(3)
-              Debug "We are here "+Str(param)+",try"+Str(ccc)
-              If fMove(x,y,param)
-                pWorld(x,y) = 0
-                Select param
-                  Case #up
-                    pWorld(x,y-1) = #foeMoved
-                  Case #down
-                    pWorld(x,y+1) = #foeMoved
-                  Case #left
-                    pWorld(x-1,y) = #foeMoved
-                  Case #right
-                    pWorld(x+1,y) = #foeMoved
-                  Default
-                    Debug "I here by mistake"
-                EndSelect
-                ok = 1
-              Else
-                ok = 0
-              EndIf
-            Until ok = 0
+            pWorld(x+1,y) = #foeMoved
           EndIf 
         Else
-          Debug "Player not at left. Try right"
-          If fMove(pX,pY,#right)
+          Debug "Player not at #right. Try #left"
+          If fMove(x,y,#left)
             pWorld(x,y) = 0
             pWorld(x-1,y) = #foeMoved
-          Else
-            Debug "Cant move right. Try random"
-            Repeat
-              ccc + 1
-              param = Random(3)
-              Debug "We are here "+Str(param)+",try"+Str(ccc)
-            If fMove(x,y,param)
-              pWorld(x,y) = 0
-              Select param
-                Case #up
-                  pWorld(x,y-1) = #foeMoved
-                Case #down
-                  pWorld(x,y+1) = #foeMoved
-                Case #left
-                  pWorld(x-1,y) = #foeMoved
-                Case #right
-                  pWorld(x+1,y) = #foeMoved
-                Default
-                  Debug "I here by mistake"
-              EndSelect
-              ok = 1
-            Else
-              ok = 0
-            EndIf
-          Until ok = 0
           EndIf 
         EndIf
       EndIf
